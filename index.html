@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>บันทึกคุณภาพอิฐมวลเบาประจำวัน</title>
+
+    <!-- เพิ่ม Google Font - Kanit -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- เพิ่ม Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- เพิ่ม Font Awesome สำหรับไอคอน -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- เพิ่ม SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- เพิ่มการเชื่อมต่อกับ Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        
+        .page-container {
+            width: 100%;
+            height: 100%;
+            max-width: 1366px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            background-color: #f5f5f5;
+            /* Changed from white to match gray background */
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-height: 100vh;
+            /* ป้องกันการล้นของหน้าจอ */
+        }
+        /* สีหลัก - ปรับสีตามที่ต้องการ */
+        
+         :root {
+            --orange-primary: #E85D04;
+            /* ส้มเข้มขึ้น */
+            --orange-light: #F9844A;
+            /* ส้มอ่อน */
+            --orange-lightest: #FFEBCD;
+            /* ส้มอ่อนมาก */
+            --gray-dark: #4A4A4A;
+            /* เทาเข้ม */
+            --gray-light: #E9E9E9;
+            /* เทาอ่อน */
+            --cell-color: #FFF9E6;
+            --border-color: #D9D9D9;
+            --accent-border: #E85D04;
+            /* ปรับให้เข้ากับ orange-primary */
+            --blue-primary: #2E86C1;
+            /* สีน้ำเงินสำหรับปุ่มค้นหา */
+            --highlight-row: #D3D3D3;
+            /* สีเทาสำหรับแถวที่เน้น */
+            --red-button: #dc3545;
+            /* สีแดงสำหรับปุ่มลบ */
+        }
+        /* ส่วนหัว */
+        
+        .header {
+            background-color: var(--orange-primary);
+            padding: 12px 16px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-logo {
+            height: 40px;
+            margin-right: 16px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .factory-group {
+            display: flex;
+            gap: 12px;
+        }
+        /* ส่วนข้อมูล */
+        
+        .info-section {
+            display: flex;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--gray-light);
+        }
+        
+        .info-field {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .info-field:last-child {
+            margin-right: 0;
+        }
+        
+        .info-field label {
+            display: block;
+            font-size: 14px;
+            color: var(--gray-dark);
+            margin-bottom: 4px;
+        }
+        
+        .info-field input,
+        .info-field select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        /* ปรับขนาดองค์ประกอบให้พอดีกับหน้าจอ */
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            /* ป้องกันการเลื่อนของพาเนลหลัก */
+            height: calc(100% - 110px);
+            min-height: 0;
+            /* สำคัญสำหรับการทำให้ flex children สามารถใช้ overflow ได้ */
+            max-height: calc(100vh - 110px);
+            /* กำหนดความสูงสูงสุด */
+        }
+        /* พาเนลซ้าย */
+        
+        .left-panel {
+            width: 330px;
+            /* เพิ่มจาก 290px เป็น 330px */
+            border-right: 1px solid var(--border-color);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background-color: var(--gray-light);
+            max-height: 100%;
+            min-height: 0;
+        }
+        
+        .quick-buttons-label {
+            font-size: 13px;
+            color: var(--gray-dark);
+            margin-top: 5px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        /* Quick buttons */
+        
+        .quick-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            /* เพิ่มจาก 3px เป็น 4px */
+            margin-bottom: 10px;
+        }
+        
+        .quick-symbol-btn {
+            background-color: var(--orange-light);
+            color: white;
+            border: none;
+            padding: 5px 2px;
+            /* เพิ่มจาก 4px 1px เป็น 5px 2px */
+            border-radius: 4px;
+            font-size: 20px;
+            /* เพิ่มจาก 11px เป็น 20px */
+            cursor: pointer;
+            flex: 1 0 31%;
+            text-align: center;
+            min-width: 95px;
+            /* เพิ่มจาก 85px เป็น 95px */
+            transition: background-color 0.2s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .quick-symbol-btn:hover {
+            background-color: var(--orange-primary);
+        }
+        
+        .quick-symbol-btn.active {
+            background-color: var(--orange-primary);
+            font-weight: bold;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px var(--orange-primary);
+        }
+        /* ป้ายด้านซ้ายและขวาของตาราง */
+        
+        .grid-label {
+            position: absolute;
+            background-color: var(--orange-primary);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            width: 25px;
+            height: auto;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        .grid-label.left {
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%) rotate(180deg);
+        }
+        
+        .grid-label.right {
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        /* ปรับปรุงความกว้างของตารางให้เหมาะสมกับหน้าจอ */
+        
+        .grid-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            /* เปลี่ยนจาก visible เป็น auto */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 35px;
+            /* เพิ่มระยะห่างสำหรับป้าย */
+            padding: 5px 0;
+        }
+        /* ปรับขนาดตารางให้เหมาะสม */
+        
+        .grid-table {
+            border-collapse: collapse;
+            table-layout: fixed;
+            width: auto;
+            /* เปลี่ยนจาก 100% เป็น auto */
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .grid-table th,
+        .grid-table td {
+            border: 1px solid var(--border-color);
+            text-align: center;
+            width: 22px;
+            /* ลดจาก 24px เป็น 22px เพื่อให้พอดีกับพื้นที่ */
+            height: 22px;
+            /* ลดจาก 24px เป็น 22px เพื่อให้พอดีกับพื้นที่ */
+            padding: 0;
+            font-size: 12px;
+        }
+        
+        .grid-table th {
+            background-color: var(--gray-dark);
+            font-weight: bold;
+            color: white;
+        }
+        
+        .grid-table td {
+            background-color: var(--cell-color);
+            cursor: pointer;
+        }
+        
+        .grid-table td.filled-cell {
+            background-color: var(--orange-lightest);
+            font-weight: bold;
+            color: var(--gray-dark);
+        }
+        /* แถวที่เน้น */
+        
+        .grid-table tr.highlight-row td {
+            background-color: var(--highlight-row);
+        }
+        /* เส้นตาราง */
+        
+        .grid-table td.border-right {
+            border-right: 2px solid var(--accent-border);
+        }
+        
+        .grid-table td.border-bottom {
+            border-bottom: 2px solid var(--accent-border);
+        }
+        
+        .grid-table th.border-right {
+            border-right: 2px solid var(--accent-border);
+        }
+        /* พาเนลขวาสุด - ข้อมูลเพิ่มเติม */
+        
+        .right-panel {
+            width: 220px;
+            /* ลดลงเพิ่มเติมจาก 230px เป็น 220px เพื่อให้พื้นที่ตารางมากขึ้น */
+            border-left: 1px solid var(--border-color);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--gray-light);
+            overflow-y: auto;
+            max-height: 100%;
+            min-height: 0;
+        }
+        
+        .info-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+        
+        .info-item {
+            background-color: var(--orange-primary);
+            border-radius: 4px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .info-item label {
+            display: block;
+            font-size: 14px;
+            color: white;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        
+        .info-item input,
+        .info-item textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid white;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        /* พาเนลกลาง - ตาราง */
+        
+        .center-panel {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+            overflow: auto;
+            /* เปลี่ยนจาก visible เป็น auto เพื่อรองรับการเลื่อนถ้าจำเป็น */
+            position: relative;
+            background-color: var(--gray-light);
+            /* Added to match other panels */
+            min-width: 0;
+            /* สำคัญสำหรับ flex items เพื่อป้องกันล้น */
+            min-height: 0;
+            /* สำคัญสำหรับ flex items เพื่อให้ overflow ทำงานได้ */
+        }
+        /* สไตล์เฉพาะตาราง 60x60x9 */
+        
+        .grid-table.size-60x60x9 td,
+        .grid-table.size-60x60x9 th {
+            border: 1px solid var(--border-color);
+            width: 60px !important;
+            height: 30px !important;
+            font-size: 16px !important;
+        }
+        /* ปรับแต่งปุ่มให้เหมือนตามรูป */
+        
+        .action-btn {
+            width: 100%;
+            padding: 8px 0;
+            /* ลดขนาด padding ลงเพื่อประหยัดพื้นที่ */
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 15px;
+            /* ลดขนาดตัวอักษรลงเล็กน้อย */
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            /* ลดระยะห่างด้านล่างลง */
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            /* เพิ่มเงาเล็กน้อยให้ปุ่มดูมีมิติ */
+        }
+        
+        .action-btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-delete {
+            background-color: var(--red-button);
+        }
+        
+        .btn-delete:hover {
+            background-color: #bd2130;
+        }
+        
+        .btn-search {
+            background-color: var(--blue-primary);
+        }
+        
+        .btn-search:hover {
+            background-color: #1a6aa8;
+        }
+        
+        .btn-save {
+            background-color: var(--orange-primary);
+        }
+        
+        .btn-save:hover {
+            background-color: #d55201;
+        }
+        /* จัดการ checkbox container */
+        /* ปรับขนาด Checkbox container */
+        
+        .checkbox-container {
+            background-color: var(--orange-primary);
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .checkbox-item {
+            margin-bottom: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            color: white;
+            font-size: 13px;
+        }
+        
+        .checkbox-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .checkbox-item input[type="text"],
+        .checkbox-item input[type="number"] {
+            margin-left: 8px;
+            padding: 4px;
+            border: 1px solid white;
+            border-radius: 4px;
+            width: 80px;
+        }
+        
+        .checkbox-item span {
+            margin-left: 6px;
+            /* เพิ่มช่องว่างระหว่าง input กับคำว่า "ก้อน" */
+        }
+        /* ตัวแสดงสถานะการโหลด */
+        
+        .loading-indicator {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            color: var(--orange-primary);
+            font-weight: bold;
+        }
+        /* ตัวแสดงสถานะการค้นหา */
+        
+        .search-status {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .search-status.success {
+            background-color: #D5F5E3;
+            color: #196F3D;
+        }
+        
+        .search-status.error {
+            background-color: #FADBD8;
+            color: #943126;
+        }
+        /* Cell Highlight */
+        
+        .grid-table td.active-cell {
+            box-shadow: inset 0 0 0 2px var(--orange-primary);
+        }
+        /* ข้อความบังคับแนวนอน */
+        
+        .landscape-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .landscape-warning h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .landscape-warning p {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        /* ปรับแต่งสำหรับ iPad แนวนอนและหน้าจอขนาดเล็ก */
+        
+        @media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+            .main-content {
+                height: calc(100vh - 110px);
+            }
+            .grid-table th,
+            .grid-table td {
+                width: 22px;
+                /* ลดขนาดลงเล็กน้อยจาก 24px เป็น 22px สำหรับหน้าจอเล็ก */
+                height: 22px;
+                font-size: 11px;
+            }
+            .left-panel {
+                width: 300px;
+                /* เพิ่มจาก 260px เป็น 300px */
+            }
+            .right-panel {
+                width: 200px;
+                /* ลดลงจาก 220px เป็น 200px เพื่อให้พื้นที่ตารางมากขึ้น */
+            }
+            .quick-symbol-btn {
+                min-width: 85px;
+                /* เพิ่มจาก 75px เป็น 85px */
+                font-size: 13px;
+                /* เพิ่มจาก 10px เป็น 13px */
+                padding: 4px 2px;
+                /* เพิ่มจาก 3px 1px เป็น 4px 2px */
+            }
+            .info-section .info-field {
+                margin-right: 4px;
+            }
+            .info-section input,
+            .info-section select {
+                padding: 4px;
+                font-size: 12px;
+            }
+            .checkbox-item {
+                margin-bottom: 4px;
+                font-size: 12px;
+            }
+            .info-item {
+                padding: 6px;
+                margin-bottom: 6px;
+            }
+            .info-item label {
+                margin-bottom: 2px;
+                font-size: 12px;
+            }
+            .info-item input,
+            .info-item textarea {
+                padding: 5px;
+                font-size: 12px;
+            }
+            .action-btn {
+                padding: 6px 0;
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+            .grid-label {
+                width: 20px;
+                font-size: 11px;
+                padding: 8px;
+            }
+            .grid-container {
+                margin: 0 25px;
+            }
+        }
+        /* สำหรับอุปกรณ์เล็ก */
+        
+        @media (max-width: 1023px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .left-panel,
+            .right-panel {
+                width: 100%;
+                border-right: none;
+                border-left: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .center-panel {
+                min-height: 500px;
+            }
+            .grid-table th,
+            .grid-table td {
+                width: 18px;
+                height: 18px;
+                font-size: 10px;
+            }
+            /* ป้ายซ้ายขวาสำหรับจอเล็ก */
+            .grid-label {
+                width: 20px;
+                font-size: 12px;
+            }
+            .grid-container {
+                margin: 0 30px;
+            }
+        }
+        
+        @media (orientation: portrait) and (max-width: 1024px) {
+            .landscape-warning {
+                display: flex;
+            }
+        }
+        /* Modal Dialog */
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        .modal-content h3 {
+            margin-bottom: 15px;
+            color: var(--orange-primary);
+        }
+        
+        .modal-button {
+            background-color: var(--orange-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        /* ล้างไม่จำเป็น control-buttons */
+        
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            /* ลดระยะห่างด้านล่างลงเล็กน้อย */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="deviceWarning" class="modal">
+        <div class="modal-content">
+            <h3>ข้อความแจ้งเตือน</h3>
+            <p>โปรแกรมนี้สำหรับใช้งานบน PC หรือ Tablet เท่านั้น</p>
+            <button class="modal-button" onclick="document.getElementById('deviceWarning').style.display='none'">ตกลง</button>
+        </div>
+    </div>
+
+    <!-- แจ้งเตือนให้ใช้งานในแนวนอน -->
+    <div id="landscapeWarning" class="landscape-warning">
+        <h2>กรุณาหมุนอุปกรณ์</h2>
+        <p>โปรแกรมนี้ควรใช้งานในแนวนอนเท่านั้น<br>กรุณาหมุนอุปกรณ์ของคุณ</p>
+        <div>
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNzAgMjBIMzBjLTUuNSAwLTEwIDQuNS0xMCAxMHY0MGMwIDUuNSA0LjUgMTAgMTAgMTBoNDBjNS41IDAgMTAtNC41IDEwLTEwVjMwYzAtNS41LTQuNS0xMC0xMC0xMHpNNDAgNzVjLTIuNzYxIDAtNS0yLjIzOS01LTVzMi4yMzktNSA1LTUgNSAyLjIzOSA1IDUtMi4yMzkgNS01IDV6TTY1IDU1SDM1Yy0xLjEgMC0yLS45LTItMlYzMGMwLTEuMSAuOS0yIDItMmgzMGMxLjEgMCAyIC45IDIgMnYyM2MwIDEuMS0uOSAyLTIgMnoiIGZpbGw9IiNmZmYiLz48L3N2Zz4="
+                alt="หมุนอุปกรณ์" width="100">
+        </div>
+    </div>
+
+    <div class="page-container">
+        <!-- ส่วนหัว -->
+        <div class="header">
+            <div class="header-left">
+                <img src="https://7space.sgp1.digitaloceanspaces.com/8C91/1573000103.0a26ac5ada96c00c61d20a5a63f42257.jpg" alt="Logo" class="header-logo">
+                <div class="header-title">บันทึกคุณภาพอิฐมวลเบาประจำวัน (ขนาด 20x60x7.5 ซม.)</div>
+            </div>
+            <div class="factory-group">
+                <label><input type="radio" name="house" value="1" checked> โรงงาน 1</label>
+                <label><input type="radio" name="house" value="2"> โรงงาน 2</label>
+                <label><input type="radio" name="house" value="3"> โรงงาน 3</label>
+            </div>
+        </div>
+
+        <!-- ส่วนข้อมูล -->
+        <div class="info-section">
+            <div class="info-field">
+                <label>หมายเลขการผลิต</label>
+                <input type="text" id="productionNumber">
+            </div>
+            <div class="info-field">
+                <label>วันที่ตรวจเช็ค</label>
+                <input type="date" id="checkDate">
+            </div>
+            <div class="info-field">
+                <label>เวลาตรวจเช็ค</label>
+                <input type="time" id="checkTime">
+            </div>
+            <div class="info-field">
+                <label>ขนาด</label>
+                <select id="sizeSelect">
+                    <option value="20x60x7.5">20x60x7.5 ซม.</option>
+                    <option value="20x50x7.5">20x50x7.5 ซม.</option>
+                    <option value="60x60x9.0">60x60x9.0 ซม.</option>
+                    <option value="20x60x10">20x60x10 ซม.</option>
+                    <option value="20x60x12.5">20x60x12.5 ซม.</option>
+                    <option value="20x60x15">20x60x15 ซม.</option>
+                    <option value="20x60x17.5">20x60x17.5 ซม.</option>
+                    <option value="20x60x20">20x60x20 ซม.</option>
+                    <option value="20x60x25">20x60x25 ซม.</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ส่วนเนื้อหาหลัก -->
+        <div class="main-content">
+            <!-- ส่วนซ้าย -->
+            <div class="left-panel">
+                <div class="quick-buttons-label">เลือกอาการที่ตรวจพบ:</div>
+                <div class="quick-buttons-container">
+                    <!-- All quick buttons generated from dropdown options -->
+                    <button type="button" class="quick-symbol-btn" data-value="ค" title="ค = โค้งหน้า/โค้งหลัง">ค</button>
+                    <button type="button" class="quick-symbol-btn" data-value="ว" title="ว = เว้าหน้า/เว้าหลัง">ว</button>
+                    <button type="button" class="quick-symbol-btn" data-value="คท" title="คท = โค้งหน้าทิ้ง/โค้งหลังทิ้ง">คท</button>
+                    <button type="button" class="quick-symbol-btn" data-value="วท" title="วท = เว้าหน้าทิ้ง/เว้าหลังทิ้ง">วท</button>
+                    <button type="button" class="quick-symbol-btn" data-value="อ" title="อ = อบไม่สุก">อ</button>
+                    <button type="button" class="quick-symbol-btn" data-value="ข" title="ข = เขียทิ้ง">ข</button>
+                    <button type="button" class="quick-symbol-btn" data-value="ร" title="ร = ร้าว">ร</button>
+                    <button type="button" class="quick-symbol-btn" data-value="N" title="N = บิ่นบน B">N</button>
+                    <button type="button" class="quick-symbol-btn" data-value="H" title="H = บิ่นบนทิ้ง">H</button>
+                    <button type="button" class="quick-symbol-btn" data-value="B" title="B = บิ่นล่าง B">B</button>
+                    <button type="button" class="quick-symbol-btn" data-value="D" title="D = บิ่นล่างทิ้ง">D</button>
+                    <button type="button" class="quick-symbol-btn" data-value="M" title="M = พื้นร่อน B">M</button>
+                    <button type="button" class="quick-symbol-btn" data-value="E" title="E = พื้นร่อนทิ้ง">E</button>
+                    <button type="button" class="quick-symbol-btn" data-value="R" title="R = ร่อน B">R</button>
+                    <button type="button" class="quick-symbol-btn" data-value="P" title="P = ร่อนทิ้ง">P</button>
+                    <button type="button" class="quick-symbol-btn" data-value="T" title="T = ทรุด B">T</button>
+                    <button type="button" class="quick-symbol-btn" data-value="U" title="U = ทรุดทิ้ง">U</button>
+                    <button type="button" class="quick-symbol-btn" data-value="W" title="W = ผิดรูป B">W</button>
+                    <button type="button" class="quick-symbol-btn" data-value="Q" title="Q = ผิดรูปทิ้ง">Q</button>
+                    <button type="button" class="quick-symbol-btn" data-value="I" title="I = ไม่ได้ขนาดหนา B">I</button>
+                    <button type="button" class="quick-symbol-btn" data-value="V" title="V = ไม่ได้ขนาดหนาทิ้ง">V</button>
+                    <button type="button" class="quick-symbol-btn" data-value="L" title="L = ลวด LONG ขาด">L</button>
+                    <button type="button" class="quick-symbol-btn" data-value="C" title="C = ลวด CROSS ขาด">C</button>
+                    <button type="button" class="quick-symbol-btn" data-value="Y" title="Y = รอยลวด">Y</button>
+                    <button type="button" class="quick-symbol-btn" data-value="Z" title="Z = ระเบิดข้าง">Z</button>
+                    <button type="button" class="quick-symbol-btn" data-value="O" title="O = รูลวด">O</button>
+                    <button type="button" class="quick-symbol-btn" data-value="G" title="G = ขี้กลาก B">G</button>
+                    <button type="button" class="quick-symbol-btn" data-value="K" title="K = ขี้กลากทิ้ง">K</button>
+                    <button type="button" class="quick-symbol-btn" data-value="J" title="J = บวมข้าง B">J</button>
+                    <button type="button" class="quick-symbol-btn" data-value="F" title="F = บวมข้างทิ้ง">F</button>
+                    <button type="button" class="quick-symbol-btn" data-value="ต" title="ต = แตก/หัก">ต</button>
+                    <button type="button" class="quick-symbol-btn" data-value="นร" title="นร = หน้าไม่เรียบ">นร</button>
+                    <button type="button" class="quick-symbol-btn" data-value="นย" title="นย = หน้าย่น">นย</button>
+                    <button type="button" class="quick-symbol-btn" data-value="รข" title="รข = ร้าวข้าง">รข</button>
+                    <button type="button" class="quick-symbol-btn" data-value="รพ" title="รพ = รูพรุน">รพ</button>
+                    <button type="button" class="quick-symbol-btn" data-value="S" title="S = ไม่ได้ขนาดกว้าง B">S</button>
+                    <button type="button" class="quick-symbol-btn" data-value="X" title="X = ไม่ได้ขนาดกว้างทิ้ง">X</button>
+                    <button type="button" class="quick-symbol-btn" data-value="พ" title="พ = พื้นยุ่ย">พ</button>
+                    <button type="button" class="quick-symbol-btn" data-value="A" title="A = ไม่ได้ขนาดยาว">A</button>
+                </div>
+
+                <!-- ช่องเลือกอื่นๆ - ย้ายกลับมาด้านซ้าย -->
+                <div class="checkbox-container">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="waterMarksCheck">
+                        <label for="waterMarksCheck">รอยคราบน้ำ</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="noLogoCheck">
+                        <label for="noLogoCheck">ไม่มีโลโก้</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="samplesCheck">
+                        <label for="samplesCheck">ตัวอย่าง</label>
+                        <input type="number" id="sampleCount" placeholder="จำนวน">
+                        <span>ก้อน</span>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="othersCheck">
+                        <label for="othersCheck">อื่น ๆ</label>
+                        <input type="text" id="othersText" placeholder="ระบุ">
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="normalCheck">
+                        <label for="normalCheck">ปกติ</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ส่วนกลาง - ตาราง -->
+            <div class="center-panel">
+                <!-- ป้ายซ้าย/ขวาของตาราง -->
+                <div class="grid-label left">หัวโมลด์ (0m-Line)</div>
+                <div class="grid-label right">ท้ายโมลด์ (6m-Line)</div>
+
+                <div class="grid-container">
+                    <table class="grid-table" id="gridTable">
+                        <!-- ตารางจะถูกสร้างด้วย JavaScript -->
+                    </table>
+                </div>
+            </div>
+
+            <!-- ส่วนขวา - ข้อมูลเพิ่มเติม -->
+            <div class="right-panel">
+                <div class="info-container">
+                    <div class="info-item">
+                        <label>หมายเหตุ</label>
+                        <textarea rows="4" id="remarks" placeholder="กรอกหมายเหตุหรือรายละเอียดเพิ่มเติม"></textarea>
+                    </div>
+                    <div class="info-item">
+                        <label>ผู้ตรวจเช็ค</label>
+                        <input type="text" id="checker">
+                    </div>
+                    <div class="info-item">
+                        <label>ตรวจสอบโดย</label>
+                        <input type="text" id="inspector">
+                    </div>
+
+                    <!-- ปุ่มล้างตาราง -->
+                    <button id="clearTableButton" class="action-btn btn-delete">
+                        <i class="fas fa-trash"></i> ล้างตาราง
+                    </button>
+                </div>
+
+                <!-- ปุ่มค้นหาและบันทึก -->
+                <div class="button-container">
+                    <button id="searchDataButton" class="action-btn btn-search" title="ค้นหาข้อมูลจากหมายเลขการผลิต">
+                        <i class="fas fa-search"></i> ค้นหา
+                    </button>
+                </div>
+                <div class="button-container">
+                    <button id="saveDataButton" class="action-btn btn-save" title="บันทึกข้อมูล">
+                        <i class="fas fa-save"></i> บันทึก
+                    </button>
+                </div>
+
+                <!-- ตัวแสดงสถานะการโหลด -->
+                <div id="loadingIndicator" class="loading-indicator">กำลังดำเนินการ...</div>
+
+                <!-- ตัวแสดงสถานะการค้นหา -->
+                <div id="searchStatus" class="search-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle and Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ทำให้ tooltip ทำงาน -->
+    <script>
+        // เปิดใช้งาน Bootstrap tooltips
+        /* เพิ่มฟังก์ชันจัดขนาดตารางให้เหมาะสม */
+        function resizeTableToFit() {
+            // คำนวณพื้นที่ที่มีอยู่
+            const centerPanel = document.querySelector('.center-panel');
+            if (!centerPanel) return;
+
+            const availableWidth = centerPanel.clientWidth - 70; // หัก margin ออก
+            const currentSize = sizeSelect.value;
+
+            if (currentSize) {
+                createTable(currentSize);
+            }
+        }
+
+        // เรียกใช้ฟังก์ชันเมื่อโหลดหน้า
+        document.addEventListener('DOMContentLoaded', function() {
+            // โค้ดเดิมที่มีอยู่...
+
+            // เรียกใช้ฟังก์ชัน resizeTableToFit หลังจากที่หน้าโหลดเสร็จสมบูรณ์
+            setTimeout(resizeTableToFit, 100);
+        });
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // กำหนด URL ของ Google Apps Script ที่จะใช้เป็น API
+            const API_URL = 'https://script.google.com/macros/s/AKfycbyx-O4HSlUJizEG9kso6UNOdTInpTBLePn2y998Hs9sbCd8O-Kzc3yj-W_Lv22-zoYs/exec';
+
+            // ความสัมพันธ์ระหว่างขนาดอิฐและขนาดตาราง
+            const brickTableConfig = {
+                "20x60x7.5": {
+                    rows: 20,
+                    cols: 30,
+                    highlightRows: [10]
+                },
+                "20x50x7.5": {
+                    rows: 20,
+                    cols: 30,
+                    highlightRows: [10]
+                },
+                "60x60x9.0": {
+                    rows: 16,
+                    cols: 10,
+                    highlightRows: [8]
+                },
+                "20x60x10": {
+                    rows: 15,
+                    cols: 30,
+                    highlightRows: [8]
+                },
+                "20x60x12.5": {
+                    rows: 12,
+                    cols: 30,
+                    highlightRows: [6]
+                },
+                "20x60x15": {
+                    rows: 10,
+                    cols: 30,
+                    highlightRows: [5]
+                },
+                "20x60x17.5": {
+                    rows: 9,
+                    cols: 30,
+                    highlightRows: [4, 9]
+                },
+                "20x60x20": {
+                    rows: 8,
+                    cols: 30,
+                    highlightRows: [4, 8]
+                },
+                "20x60x25": {
+                    rows: 6,
+                    cols: 30,
+                    highlightRows: [3]
+                }
+            };
+
+            // ตรวจสอบขนาดหน้าจอและแนวการแสดงผล
+            function checkDeviceTypeAndOrientation() {
+                const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const isSmallScreen = window.innerWidth < 768;
+                const isTablet = /iPad|Tablet/i.test(navigator.userAgent) || (window.innerWidth >= 768 && window.innerWidth <= 1024);
+                const isPortrait = window.innerHeight > window.innerWidth;
+
+                if (isMobile && isSmallScreen) {
+                    document.getElementById('deviceWarning').style.display = 'block';
+                }
+
+                // ตรวจสอบ iPad หรืออุปกรณ์ tablet ในแนวตั้ง
+                if ((isTablet || window.innerWidth <= 1024) && isPortrait) {
+                    document.getElementById('landscapeWarning').style.display = 'flex';
+                } else {
+                    document.getElementById('landscapeWarning').style.display = 'none';
+                }
+            }
+
+            // เรียกใช้ฟังก์ชันตรวจสอบขนาดหน้าจอและแนวการแสดงผล
+            checkDeviceTypeAndOrientation();
+
+            /* ตรวจสอบการเปลี่ยนแปลงขนาดหน้าจอ */
+            window.addEventListener('resize', function() {
+                checkDeviceTypeAndOrientation();
+
+                // สร้างตารางใหม่เมื่อขนาดหน้าจอเปลี่ยน
+                const currentSize = sizeSelect.value;
+                if (currentSize) {
+                    createTable(currentSize);
+                }
+            });
+
+            // ตรวจสอบการเปลี่ยนแปลงแนวการแสดงผล
+            window.addEventListener('orientationchange', function() {
+                setTimeout(checkDeviceTypeAndOrientation, 100); // รอให้การหมุนเสร็จสมบูรณ์
+            });
+
+            // ตั้งค่าวันและเวลาปัจจุบัน
+            function setCurrentDateTime() {
+                const now = new Date();
+
+                // จัดรูปแบบวันที่ YYYY-MM-DD สำหรับ input type="date"
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const dateString = `${year}-${month}-${day}`;
+
+                // จัดรูปแบบเวลา HH:MM สำหรับ input type="time"
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const timeString = `${hours}:${minutes}`;
+
+                // ตั้งค่า default
+                document.getElementById('checkDate').value = dateString;
+                document.getElementById('checkTime').value = timeString;
+            }
+
+            // เรียกใช้ฟังก์ชันตั้งค่าวันและเวลาปัจจุบัน
+            setCurrentDateTime();
+
+            // ตัวแปรและอีลิเมนต์ที่เกี่ยวข้อง
+            const sizeSelect = document.getElementById('sizeSelect');
+            const documentTitle = document.querySelector('.header-title');
+            const clearTableButton = document.getElementById('clearTableButton');
+            const searchButton = document.getElementById('searchDataButton');
+            const saveButton = document.getElementById('saveDataButton');
+            const productionNumberInput = document.getElementById('productionNumber');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const searchStatus = document.getElementById('searchStatus');
+            const gridTable = document.getElementById('gridTable');
+
+            // ตั้งค่าเริ่มต้น
+            let currentSymbol = '';
+            let cells = []; // เก็บอ้างอิงไปยังเซลล์ทั้งหมด
+
+            // ตัวแปรสำหรับการลากนิ้ว
+            let isDragging = false;
+            let lastTouchedCell = null;
+            let isMouseDown = false;
+            let isEraseMode = false;
+            let hasMovedMouse = false;
+
+            // เรียกใช้ฟังก์ชันเริ่มต้นปุ่มลัด
+            initQuickButtons();
+
+            /* สร้างตารางตามขนาดอิฐที่เลือก */
+            function createTable(size) {
+                const config = brickTableConfig[size];
+                if (!config) return;
+
+                const rows = config.rows;
+                const cols = config.cols;
+                const highlightRows = config.highlightRows;
+                const is60x60x9 = size === "60x60x9.0"; // เช็คว่าเป็นอิฐ 60x60x9 หรือไม่
+
+                // ปรับขนาดเซลล์ตามขนาดหน้าจอ
+                const containerWidth = document.querySelector('.center-panel').clientWidth - 70; // หัก margin ออก
+                const cellSize = Math.min(22, Math.floor((containerWidth / (cols + 2)) - 1)); // +2 สำหรับหัวตาราง, -1 สำหรับ border
+
+                // เคลียร์ตารางเดิม
+                gridTable.innerHTML = '';
+
+                // สร้างแถวส่วนหัวด้านบน
+                let headerRow = document.createElement('tr');
+                let cornerCell = document.createElement('th');
+                cornerCell.textContent = 'ลำดับ';
+                headerRow.appendChild(cornerCell);
+
+                // สร้างหัวคอลัมน์ 1-N
+                for (let i = 1; i <= cols; i++) {
+                    let th = document.createElement('th');
+                    th.textContent = i;
+
+                    // เพิ่ม class สำหรับเส้นขอบด้านขวาทุก 5 คอลัมน์ (ยกเว้น 60x60x9)
+                    if (!is60x60x9 && i % 5 === 0) {
+                        th.classList.add('border-right');
+                    }
+
+                    // สำหรับอิฐ 60x60x9 ให้ทำตารางให้กว้างขึ้น
+                    if (is60x60x9) {
+                        th.style.width = cellSize * 2 + "px"; // ปรับขนาดหัวคอลัมน์ให้กว้างขึ้น
+                    } else {
+                        th.style.width = cellSize + "px";
+                    }
+
+                    headerRow.appendChild(th);
+                }
+
+                // เพิ่มเซลล์ลำดับในหัวตารางด้านขวา
+                let rightHeaderCell = document.createElement('th');
+                rightHeaderCell.textContent = 'ลำดับ';
+                headerRow.appendChild(rightHeaderCell);
+
+                gridTable.appendChild(headerRow);
+
+                // สร้างแถวและเซลล์ของตาราง
+                for (let row = 1; row <= rows; row++) {
+                    let tr = document.createElement('tr');
+
+                    // เพิ่ม class highlight สำหรับแถวที่ต้องการเน้น
+                    if (highlightRows.includes(row)) {
+                        tr.classList.add('highlight-row');
+                    }
+
+                    // เพิ่มเซลล์ลำดับด้านซ้าย
+                    let leftRowHeader = document.createElement('th');
+                    leftRowHeader.textContent = row;
+                    tr.appendChild(leftRowHeader);
+
+                    // สร้างเซลล์ข้อมูล
+                    for (let col = 1; col <= cols; col++) {
+                        let td = document.createElement('td');
+                        td.setAttribute('data-row', row);
+                        td.setAttribute('data-col', col);
+
+                        // เพิ่ม class สำหรับเส้นขอบ (ยกเว้น 60x60x9)
+                        if (!is60x60x9) {
+                            let cellClasses = "";
+                            if (col % 5 === 0) cellClasses += "border-right ";
+
+                            if (cellClasses) {
+                                td.className = cellClasses;
+                            }
+                        }
+
+                        // สำหรับอิฐ 60x60x9 ให้ทำเซลล์ให้กว้างและสูงขึ้น
+                        if (is60x60x9) {
+                            td.style.width = cellSize * 2 + "px";
+                            td.style.height = cellSize * 1.5 + "px";
+                            td.style.fontSize = "16px";
+                        } else {
+                            td.style.width = cellSize + "px";
+                            td.style.height = cellSize + "px";
+                        }
+
+                        tr.appendChild(td);
+                    }
+
+                    // เพิ่มเซลล์ลำดับด้านขวา
+                    let rightRowHeader = document.createElement('th');
+                    rightRowHeader.textContent = row;
+                    tr.appendChild(rightRowHeader);
+
+                    gridTable.appendChild(tr);
+                }
+
+                // เพิ่มแถวลำดับด้านล่าง
+                let footerRow = document.createElement('tr');
+                let footerCornerCell = document.createElement('th');
+                footerRow.appendChild(footerCornerCell);
+
+                // เพิ่มเซลล์ลำดับคอลัมน์ด้านล่าง
+                for (let i = 1; i <= cols; i++) {
+                    let th = document.createElement('th');
+                    th.textContent = i;
+
+                    // เพิ่ม class สำหรับเส้นขอบด้านขวาทุก 5 คอลัมน์ (ยกเว้น 60x60x9)
+                    if (!is60x60x9 && i % 5 === 0) {
+                        th.classList.add('border-right');
+                    }
+
+                    footerRow.appendChild(th);
+                }
+
+                // เพิ่มเซลล์มุมขวาล่าง
+                let bottomRightCorner = document.createElement('th');
+                footerRow.appendChild(bottomRightCorner);
+
+                gridTable.appendChild(footerRow);
+
+                // อัปเดตชื่อรายงานตามขนาดอิฐ
+                const selectedSizeText = sizeSelect.options[sizeSelect.selectedIndex].text;
+                documentTitle.textContent = `บันทึกคุณภาพอิฐมวลเบาประจำวัน (${selectedSizeText})`;
+
+                // เพิ่มคลาสพิเศษสำหรับตาราง 60x60x9
+                if (is60x60x9) {
+                    gridTable.classList.add('size-60x60x9');
+                } else {
+                    gridTable.classList.remove('size-60x60x9');
+                }
+
+                // อัปเดตรายการ cells ให้เป็นปัจจุบัน
+                cells = document.querySelectorAll('.grid-table td');
+
+                // เพิ่ม event listeners สำหรับเซลล์ใหม่
+                addCellEventListeners();
+            }
+
+            // เพิ่ม event listeners สำหรับเซลล์
+            function addCellEventListeners() {
+                cells.forEach(cell => {
+                    // จัดการกับการคลิกที่เซลล์โดยตรง (แยกจากการลาก)
+                    cell.addEventListener('mousedown', function(e) {
+                        // ทำงานเฉพาะคลิกซ้าย
+                        if (e.button !== 0) return;
+
+                        // Reset flags
+                        hasMovedMouse = false;
+                        isMouseDown = true;
+
+                        // กำหนดโหมดลบหรือเพิ่ม
+                        isEraseMode = this.textContent.trim() !== '';
+
+                        // ลบ active highlight จากเซลล์อื่น
+                        cells.forEach(c => c.classList.remove('active-cell'));
+                        this.classList.add('active-cell');
+                    });
+
+                    cell.addEventListener('mouseup', function(e) {
+                        // ทำงานเฉพาะคลิกซ้าย
+                        if (e.button !== 0) return;
+
+                        // ถ้าไม่ได้เคลื่อนที่เมาส์ = คลิกเดียว
+                        if (isMouseDown && !hasMovedMouse) {
+                            handleCellClick(this);
+                        }
+
+                        isMouseDown = false;
+                        hasMovedMouse = false;
+                    });
+
+                    cell.addEventListener('mousemove', function(e) {
+                        if (isMouseDown) {
+                            hasMovedMouse = true;
+
+                            // โหมดมีสัญลักษณ์ที่เลือก
+                            if (currentSymbol) {
+                                this.classList.add('active-cell');
+
+                                // ถ้าอยู่ในโหมดลบและมีข้อมูล ให้ลบข้อมูล
+                                // หรือถ้าอยู่ในโหมดเพิ่มและไม่มีข้อมูล ให้เพิ่มข้อมูล
+                                if (isEraseMode) {
+                                    if (this.textContent.trim() !== '') {
+                                        this.textContent = '';
+                                        this.classList.remove('filled-cell');
+                                    }
+                                } else {
+                                    if (this.textContent.trim() === '') {
+                                        this.textContent = currentSymbol;
+                                        this.classList.add('filled-cell');
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+
+                // เพิ่ม event listeners สำหรับการสัมผัสบนมือถือและแท็บเล็ต
+                gridTable.addEventListener('touchmove', function(e) {
+                    if (isDragging) {
+                        e.preventDefault();
+                    }
+                }, {
+                    passive: false
+                });
+
+                // เริ่มการลากเมื่อแตะ
+                gridTable.addEventListener('touchstart', function(e) {
+                    if (!currentSymbol) return;
+
+                    const touch = e.touches[0];
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+                    if (element && element.tagName === 'TD') {
+                        isDragging = true;
+                        lastTouchedCell = element;
+
+                        // กำหนดโหมดลบหรือเพิ่ม (ถ้ามีข้อมูลอยู่แล้วจะเข้าโหมดลบ)
+                        isEraseMode = element.textContent.trim() !== '';
+
+                        // ใส่ข้อมูลในเซลล์แรกที่แตะ
+                        if (element.textContent.trim() === '') {
+                            element.textContent = currentSymbol;
+                            element.classList.add('filled-cell');
+                        } else {
+                            element.textContent = '';
+                            element.classList.remove('filled-cell');
+                        }
+
+                        element.classList.add('active-cell');
+                        e.preventDefault();
+                    }
+                }, {
+                    passive: false
+                });
+
+                // ติดตามการเคลื่อนที่ของนิ้ว
+                gridTable.addEventListener('touchmove', function(e) {
+                    if (!isDragging) return;
+
+                    const touch = e.touches[0];
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+                    if (element && element.tagName === 'TD' && lastTouchedCell !== element) {
+                        // ลบไฮไลท์จากเซลล์อื่น
+                        cells.forEach(cell => cell.classList.remove('active-cell'));
+
+                        // เซลล์ใหม่ที่นิ้วลากผ่าน
+                        element.classList.add('active-cell');
+                        lastTouchedCell = element;
+
+                        // ถ้าอยู่ในโหมดลบและมีข้อมูล ให้ลบข้อมูล
+                        // หรือถ้าอยู่ในโหมดเพิ่มและไม่มีข้อมูล ให้เพิ่มข้อมูล
+                        if (isEraseMode) {
+                            if (element.textContent.trim() !== '') {
+                                element.textContent = '';
+                                element.classList.remove('filled-cell');
+                            }
+                        } else {
+                            if (element.textContent.trim() === '') {
+                                element.textContent = currentSymbol;
+                                element.classList.add('filled-cell');
+                            }
+                        }
+                    }
+                }, {
+                    passive: false
+                });
+            }
+
+            // สร้างตารางเริ่มต้นด้วยค่าเริ่มต้น
+            createTable("20x60x7.5");
+
+            // เปลี่ยนขนาดอิฐ
+            sizeSelect.addEventListener('change', function() {
+                const selectedSize = sizeSelect.value;
+
+                // ถามผู้ใช้ก่อนเปลี่ยนขนาดหากมีข้อมูลในตาราง
+                let hasData = false;
+                cells.forEach(cell => {
+                    if (cell.textContent.trim() !== '') {
+                        hasData = true;
+                    }
+                });
+
+                if (hasData) {
+                    showConfirm('การเปลี่ยนขนาดจะทำให้ข้อมูลในตารางหายไป ต้องการดำเนินการต่อหรือไม่?', (confirmed) => {
+                        if (confirmed) {
+                            createTable(selectedSize);
+                        } else {
+                            // คืนค่าเลือกเดิม
+                            const prevSize = documentTitle.textContent.match(/\((.*?)\)/)[1].replace(' ซม.', '');
+                            for (let i = 0; i < sizeSelect.options.length; i++) {
+                                if (sizeSelect.options[i].text.includes(prevSize)) {
+                                    sizeSelect.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    createTable(selectedSize);
+                }
+            });
+
+            // เพิ่ม event listeners สำหรับปุ่มลัด
+            function initQuickButtons() {
+                const quickButtons = document.querySelectorAll('.quick-symbol-btn');
+
+                quickButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const value = this.getAttribute('data-value');
+
+                        // ตรวจสอบว่าเป็นการกดปุ่มเดิมซ้ำหรือไม่
+                        if (currentSymbol === value && this.classList.contains('active')) {
+                            // กดซ้ำปุ่มเดิม - ทำการ reset
+                            currentSymbol = '';
+                            this.classList.remove('active');
+                        } else {
+                            // กดปุ่มใหม่
+                            // อัปเดตค่า currentSymbol
+                            currentSymbol = value;
+
+                            // อัปเดตสถานะ active ของปุ่ม
+                            quickButtons.forEach(btn => btn.classList.remove('active'));
+                            this.classList.add('active');
+                        }
+                    });
+                });
+            }
+
+            // ล้างข้อมูลในตาราง
+            clearTableButton.addEventListener('click', function() {
+                showConfirm('คุณต้องการล้างข้อมูลทั้งหมดในฟอร์มใช่หรือไม่?', (confirmed) => {
+                    if (confirmed) {
+                        clearAllFormData();
+                    }
+                });
+            });
+
+            // แทนที่ alert() ด้วย SweetAlert
+            function showAlert(message, type = 'warning') {
+                Swal.fire({
+                    title: 'แจ้งเตือน',
+                    text: message,
+                    icon: type,
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: type === 'success' ? '#28a745' : '#E85D04'
+                });
+            }
+
+            // ฟังก์ชันแสดงข้อความยืนยัน (แทนที่ confirm())
+            function showConfirm(message, callback) {
+                Swal.fire({
+                    title: 'ยืนยัน',
+                    text: message,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'ตกลง',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#dc3545'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        callback(true);
+                    } else {
+                        callback(false);
+                    }
+                });
+            }
+
+            // ฟังก์ชันแสดงสถานะการโหลด
+            function showLoading(isLoading, message = 'กำลังดำเนินการ...') {
+                if (isLoading) {
+                    loadingIndicator.textContent = message;
+                    loadingIndicator.style.display = 'block';
+                    searchButton.disabled = true;
+                    saveButton.disabled = true;
+
+                    // เพิ่ม SweetAlert loading
+                    Swal.fire({
+                        title: message,
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                } else {
+                    loadingIndicator.style.display = 'none';
+                    searchButton.disabled = false;
+                    saveButton.disabled = false;
+
+                    // ปิด SweetAlert loading
+                    Swal.close();
+                }
+            }
+
+            // ฟังก์ชันแสดงสถานะการค้นหา/บันทึก
+            function showStatus(message, isSuccess = true) {
+                searchStatus.textContent = message;
+                searchStatus.className = 'search-status ' + (isSuccess ? 'success' : 'error');
+                searchStatus.style.display = 'block';
+
+                // เพิ่ม SweetAlert
+                Swal.fire({
+                    title: isSuccess ? 'สำเร็จ' : 'เกิดข้อผิดพลาด',
+                    text: message,
+                    icon: isSuccess ? 'success' : 'error',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: isSuccess ? '#28a745' : '#E85D04'
+                });
+
+                // ซ่อนข้อความหลัง 5 วินาที
+                setTimeout(() => {
+                    searchStatus.style.display = 'none';
+                }, 5000);
+            }
+
+            // ฟังก์ชันแสดงข้อผิดพลาดแบบละเอียด
+            function showDetailedError(action, error, errorDetails = null) {
+                console.error(`${action} Error:`, error);
+
+                let errorMessage = `เกิดข้อผิดพลาดในการ${action}: ${error.message || error}`;
+
+                // ถ้ามีรายละเอียดข้อผิดพลาดเพิ่มเติม
+                if (errorDetails) {
+                    errorMessage += `\n\nรายละเอียด: ${errorDetails}`;
+                }
+
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด',
+                    html: errorMessage.replace(/\n/g, '<br>'),
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#E85D04'
+                });
+            }
+
+            // ฟังก์ชันสำหรับคลิกที่เซลล์ (ใช้ซ้ำได้)
+            function handleCellClick(cell) {
+                if (currentSymbol) {
+                    // สลับการมีและไม่มีข้อมูล
+                    if (cell.textContent.trim() === '') {
+                        // เซลล์ว่าง ให้เพิ่มข้อมูล
+                        cell.textContent = currentSymbol;
+                        cell.classList.add('filled-cell');
+                    } else {
+                        // มีข้อมูลอยู่แล้ว ให้ลบออก
+                        cell.textContent = '';
+                        cell.classList.remove('filled-cell');
+                    }
+                } else {
+                    showAlert('โปรดเลือกอาการที่พบก่อน');
+                }
+            }
+
+            // ป้องกันไม่ให้แสดงเมนูคลิกขวาบนตาราง
+            gridTable.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // ล้างข้อมูลในตาราง
+            function clearAllFormData() {
+                document.getElementById("productionNumber").value = "";
+                document.getElementById("remarks").value = "";
+                document.getElementById("waterMarksCheck").checked = false;
+                document.getElementById("noLogoCheck").checked = false;
+                document.getElementById("samplesCheck").checked = false;
+                document.getElementById("sampleCount").value = "";
+                document.getElementById("othersCheck").checked = false;
+                document.getElementById("othersText").value = "";
+                document.getElementById("normalCheck").checked = false;
+                document.getElementById("checker").value = "";
+                document.getElementById("inspector").value = "";
+
+                // ล้างข้อมูลในตาราง
+                cells.forEach(cell => {
+                    cell.textContent = "";
+                    cell.classList.remove("filled-cell");
+                });
+
+                // รีเซ็ตการเลือกสัญลักษณ์
+                currentSymbol = "";
+
+                // ล้างการเลือกปุ่มลัด
+                document.querySelectorAll('.quick-symbol-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // ตั้งค่าวันและเวลาปัจจุบันใหม่
+                setCurrentDateTime();
+            }
+
+            // ฟังก์ชันแปลงรูปแบบวันที่ yyyy-mm-dd เป็น dd/mm/yyyy
+            function formatDate(inputDate) {
+                const dateParts = inputDate.split('-');
+                if (dateParts.length === 3) {
+                    return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                }
+                return inputDate;
+            }
+
+            // ฟังก์ชันแปลงรูปแบบวันที่ dd/mm/yyyy เป็น yyyy-mm-dd
+            function parseDate(inputDate) {
+                const dateParts = inputDate.split('/');
+                if (dateParts.length === 3) {
+                    return `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                }
+                return inputDate;
+            }
+
+            // ============== เพิ่มโค้ดใหม่สำหรับ Google Sheets ==============
+
+            // ฟังก์ชันสำหรับดึงข้อมูล
+            searchButton.addEventListener("click", function() {
+                const productionNumber = productionNumberInput.value.trim();
+
+                if (!productionNumber) {
+                    showAlert("กรุณากรอกหมายเลขการผลิตที่ต้องการค้นหา");
+                    return;
+                }
+
+                showLoading(true, "กำลังค้นหาข้อมูล...");
+
+                // เรียกใช้ Google Script API สำหรับค้นหาข้อมูลบล็อก
+                fetch(`${API_URL}?operation=searchBlock&productionNumber=${encodeURIComponent(productionNumber)}`)
+                    .then(response => response.text())
+                    .then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error("Error parsing JSON:", text);
+                            throw new Error("ไม่สามารถอ่านข้อมูลจาก API ได้");
+                        }
+                    })
+                    .then(result => {
+                        if (result.status === 'success' && result.data) {
+                            // ล้างข้อมูลเดิมก่อน
+                            clearAllFormData();
+
+                            // แสดงข้อมูลที่พบใน console สำหรับดีบัก
+                            console.log("ข้อมูลบล็อกที่พบ:", result.data);
+
+                            // กรอกข้อมูลจากผลลัพธ์
+                            const blockData = result.data;
+
+                            // กรอกข้อมูลหมายเลขการผลิต
+                            document.getElementById("productionNumber").value = blockData.productionNumber || "";
+
+                            // กำหนดโรงงาน
+                            if (blockData.factory) {
+                                const factoryNum = blockData.factory.replace("โรงงาน ", "");
+                                const radioBtn = document.querySelector(`input[name="house"][value="${factoryNum}"]`);
+                                if (radioBtn) radioBtn.checked = true;
+                            }
+
+                            // กำหนดวันที่และเวลา
+                            if (blockData.checkDate) {
+                                document.getElementById("checkDate").value = parseDate(blockData.checkDate);
+                            }
+
+                            if (blockData.checkTime) {
+                                document.getElementById("checkTime").value = blockData.checkTime;
+                            }
+
+                            // กำหนดขนาด
+                            if (blockData.size) {
+                                sizeSelect.value = blockData.size;
+                                createTable(blockData.size);
+                            }
+
+                            // กำหนดผู้ตรวจและผู้ตรวจสอบ
+                            document.getElementById("checker").value = blockData.checker || "";
+                            document.getElementById("inspector").value = blockData.inspector || "";
+
+                            // กำหนดหมายเหตุ
+                            document.getElementById("remarks").value = blockData.remarks || "";
+
+                            // กำหนด checkbox ต่างๆ
+                            document.getElementById("waterMarksCheck").checked = blockData.waterMarks === 'Yes';
+                            document.getElementById("noLogoCheck").checked = blockData.noLogo === 'Yes';
+                            document.getElementById("normalCheck").checked = blockData.normal === 'Yes';
+
+                            // กำหนดค่าตัวอย่าง
+                            if (blockData.sampleCount) {
+                                document.getElementById("samplesCheck").checked = true;
+                                document.getElementById("sampleCount").value = blockData.sampleCount;
+                            }
+
+                            // กำหนดค่าอื่นๆ
+                            if (blockData.othersText) {
+                                document.getElementById("othersCheck").checked = true;
+                                document.getElementById("othersText").value = blockData.othersText;
+                            }
+
+                            // อัปเดตรายการ cells หลังจากสร้างตารางใหม่
+                            cells = document.querySelectorAll('.grid-table td');
+                            addCellEventListeners();
+
+                            // ดึงข้อมูลตำแหน่ง
+                            return fetch(`${API_URL}?operation=searchPositions&productionNumber=${encodeURIComponent(productionNumber)}`);
+                        } else {
+                            throw new Error(result.message || "ไม่พบข้อมูล");
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error("Error parsing positions JSON:", text);
+                            throw new Error("ไม่สามารถอ่านข้อมูลตำแหน่งจาก API ได้");
+                        }
+                    })
+                    .then(result => {
+                        if (result.status === 'success' && result.data) {
+                            console.log("ข้อมูลตำแหน่งที่พบ:", result.data);
+
+                            // กรอกข้อมูลตำแหน่งลงในตาราง
+                            result.data.forEach(position => {
+                                if (position.position && position.defectType) {
+                                    const [row, col] = position.position.split(',');
+                                    const cell = document.querySelector(`.grid-table td[data-row="${row}"][data-col="${col}"]`);
+
+                                    if (cell) {
+                                        cell.textContent = position.defectType;
+                                        cell.classList.add('filled-cell');
+                                    } else {
+                                        console.warn(`ไม่พบเซลล์ที่ตำแหน่ง ${row},${col}`);
+                                    }
+                                }
+                            });
+
+                            showLoading(false);
+                            showStatus(`ค้นพบข้อมูลหมายเลขการผลิต ${productionNumber} แล้ว`, true);
+                        } else {
+                            showLoading(false);
+                            showStatus(`พบข้อมูลบล็อก แต่ไม่พบข้อมูลตำแหน่ง`, true);
+                        }
+                    })
+                    .catch(error => {
+                        showLoading(false);
+                        showDetailedError("ค้นหาข้อมูล", error);
+                        console.error("ข้อผิดพลาดในการค้นหา:", error);
+                    });
+            });
+
+            // ฟังก์ชันสำหรับบันทึกข้อมูล
+            saveButton.addEventListener("click", function() {
+                // ดึงค่าข้อมูลจากฟอร์ม
+                const productionNumber = document.getElementById("productionNumber").value.trim();
+                const checkDate = document.getElementById("checkDate").value;
+                const checkTime = document.getElementById("checkTime").value;
+                const size = document.getElementById("sizeSelect").value;
+                const checker = document.getElementById("checker").value;
+                const inspector = document.getElementById("inspector").value;
+                const remarks = document.getElementById("remarks").value;
+
+                // ดึงค่าข้อมูลจากช่อง checkbox
+                const waterMarks = document.getElementById("waterMarksCheck").checked;
+                const noLogo = document.getElementById("noLogoCheck").checked;
+                const samples = document.getElementById("samplesCheck").checked;
+                const sampleCount = samples ? document.getElementById("sampleCount").value : '';
+                const others = document.getElementById("othersCheck").checked;
+                const othersText = others ? document.getElementById("othersText").value : '';
+                const normal = document.getElementById("normalCheck").checked;
+
+                // ดึงค่าจาก radio button โรงงาน
+                const factoryNumber = document.querySelector('input[name="house"]:checked').value;
+
+                // ตรวจสอบข้อมูลที่จำเป็น
+                if (!productionNumber) {
+                    showAlert("กรุณากรอกหมายเลขการผลิต");
+                    return;
+                }
+
+                if (!checkDate) {
+                    showAlert("กรุณาเลือกวันที่ตรวจเช็ค");
+                    return;
+                }
+
+                if (!checker) {
+                    showAlert("กรุณากรอกชื่อผู้ตรวจเช็ค");
+                    return;
+                }
+
+                // แสดงการโหลด
+                showLoading(true, "กำลังบันทึกข้อมูล...");
+
+                // สร้างข้อมูลสำหรับบันทึก
+                const blockData = {
+                    operation: 'saveBlock',
+                    productionNumber: productionNumber,
+                    factory: `โรงงาน ${factoryNumber}`,
+                    checkDate: formatDate(checkDate),
+                    checkTime: checkTime,
+                    size: size,
+                    checker: checker,
+                    inspector: inspector,
+                    remarks: remarks,
+                    waterMarks: waterMarks ? 'Yes' : 'No',
+                    noLogo: noLogo ? 'Yes' : 'No',
+                    sampleCount: sampleCount,
+                    othersText: othersText,
+                    normal: normal ? 'Yes' : 'No'
+                };
+
+                console.log("กำลังบันทึกข้อมูล Block:", blockData);
+
+                // บันทึกข้อมูลบล็อก
+                fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8',
+                        },
+                        body: JSON.stringify(blockData)
+                    })
+                    .then(response => response.text())
+                    .then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error("Error parsing save block response:", text);
+                            throw new Error("ไม่สามารถประมวลผลการบันทึกได้");
+                        }
+                    })
+                    .then(result => {
+                        if (result.status !== 'success') {
+                            throw new Error(result.message || "บันทึกข้อมูลไม่สำเร็จ");
+                        }
+
+                        console.log("บันทึกข้อมูล Block สำเร็จ");
+
+                        // รวบรวมข้อมูลตำแหน่ง
+                        const positions = [];
+                        cells.forEach(cell => {
+                            const row = cell.getAttribute("data-row");
+                            const col = cell.getAttribute("data-col");
+                            const value = cell.textContent.trim();
+
+                            if (value !== "") {
+                                positions.push({
+                                    position: `${row},${col}`,
+                                    defectType: value
+                                });
+                            }
+                        });
+
+                        console.log(`พบตำแหน่งที่มีข้อมูล ${positions.length} ตำแหน่ง`);
+
+                        // บันทึกข้อมูลตำแหน่ง
+                        return fetch(API_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=utf-8',
+                            },
+                            body: JSON.stringify({
+                                operation: 'savePositions',
+                                productionNumber: productionNumber,
+                                positions: positions
+                            })
+                        });
+                    })
+                    .then(response => response.text())
+                    .then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error("Error parsing save positions response:", text);
+                            throw new Error("ไม่สามารถประมวลผลการบันทึกตำแหน่งได้");
+                        }
+                    })
+                    .then(result => {
+                        if (result.status !== 'success') {
+                            throw new Error(result.message || "บันทึกข้อมูลตำแหน่งไม่สำเร็จ");
+                        }
+
+                        console.log("บันทึกข้อมูลตำแหน่งสำเร็จ");
+                        showLoading(false);
+                        showStatus("บันทึกข้อมูลเรียบร้อย", true);
+
+                        // ถามผู้ใช้ว่าต้องการล้างฟอร์มหรือไม่
+                        showConfirm("ต้องการล้างข้อมูลในฟอร์มเพื่อเริ่มการบันทึกใหม่หรือไม่?", (confirmed) => {
+                            if (confirmed) {
+                                clearAllFormData();
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error("ข้อผิดพลาดในการบันทึก:", error);
+                        showLoading(false);
+                        showDetailedError("บันทึกข้อมูล", error);
+                    });
+            });
+
+            // จบการลาก
+            document.addEventListener('touchend', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    cells.forEach(cell => cell.classList.remove('active-cell'));
+                }
+            });
+
+            // การแตะนอกตาราง
+            document.addEventListener('touchcancel', function() {
+                isDragging = false;
+                cells.forEach(cell => cell.classList.remove('active-cell'));
+            });
+
+            // Clean up after mouse drag ends
+            document.addEventListener('mouseup', function() {
+                if (isMouseDown) {
+                    isMouseDown = false;
+
+                    // เมื่อลากเสร็จแล้ว รอสักครู่แล้วล้าง active-cell
+                    setTimeout(() => {
+                        cells.forEach(cell => cell.classList.remove('active-cell'));
+                    }, 300);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
