@@ -206,6 +206,14 @@
             white-space: nowrap;
         }
         
+        .quick-symbol-btn.full-row {
+            flex: 1 0 100%;
+            background-color: var(--orange-light);
+            font-size: 16px;
+            padding: 8px;
+            font-weight: bold;
+        }
+        
         .quick-symbol-btn:hover {
             background-color: var(--orange-primary);
         }
@@ -748,6 +756,7 @@
             <div class="info-field">
                 <label>ขนาด</label>
                 <select id="sizeSelect">
+                        <option value="">-- เลือกขนาด --</option>
                     <option value="20x60x7.5">20x60x7.5 ซม.</option>
                     <option value="20x50x7.5">20x50x7.5 ซม.</option>
                     <option value="60x60x9.0">60x60x9.0 ซม.</option>
@@ -759,6 +768,16 @@
                     <option value="20x60x25">20x60x25 ซม.</option>
                 </select>
             </div>
+            <div class="info-field">
+                <label for="gradeSelect">ชั้นคุณภาพ</label>
+                <select id="gradeSelect">
+                  <option value="">-- เลือกชั้น --</option>
+                  <option value="G2">G2</option>
+                  <option value="G3">G3</option>
+                  <option value="G4">G4</option>
+                </select>
+            </div>
+
         </div>
 
         <!-- ส่วนเนื้อหาหลัก -->
@@ -807,6 +826,8 @@
                     <button type="button" class="quick-symbol-btn" data-value="X" title="X = ไม่ได้ขนาดกว้างทิ้ง">X</button>
                     <button type="button" class="quick-symbol-btn" data-value="พ" title="พ = พื้นยุ่ย">พ</button>
                     <button type="button" class="quick-symbol-btn" data-value="A" title="A = ไม่ได้ขนาดยาว">A</button>
+                    <button type="button" class="quick-symbol-btn full-row" data-value="EX" title="EX = สุ่มชักตัวอย่าง">EX</button>
+
                 </div>
 
                 <!-- ช่องเลือกอื่นๆ - ย้ายกลับมาด้านซ้าย -->
@@ -930,7 +951,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // กำหนด URL ของ Google Apps Script ที่จะใช้เป็น API
-            const API_URL = 'https://script.google.com/macros/s/AKfycbyx-O4HSlUJizEG9kso6UNOdTInpTBLePn2y998Hs9sbCd8O-Kzc3yj-W_Lv22-zoYs/exec';
+            const API_URL = 'https://script.google.com/macros/s/AKfycbz_T7dzkA6_I5-ptYWtSddvLMinXYbStKzAHo3RGpLCWUraIhvEbaf8N8fpsZgy_uxj/exec';
 
             // ความสัมพันธ์ระหว่างขนาดอิฐและขนาดตาราง
             const brickTableConfig = {
@@ -1343,13 +1364,16 @@
             }
 
             // สร้างตารางเริ่มต้นด้วยค่าเริ่มต้น
-            createTable("20x60x7.5");
+            //createTable("20x60x7.5");
 
             // เปลี่ยนขนาดอิฐ
             sizeSelect.addEventListener('change', function() {
                 const selectedSize = sizeSelect.value;
 
-                // ถามผู้ใช้ก่อนเปลี่ยนขนาดหากมีข้อมูลในตาราง
+                if (!selectedSize) {
+                    return; // ถ้ายังไม่ได้เลือกขนาดจริง ไม่ต้องทำอะไร
+                }
+
                 let hasData = false;
                 cells.forEach(cell => {
                     if (cell.textContent.trim() !== '') {
@@ -1362,7 +1386,7 @@
                         if (confirmed) {
                             createTable(selectedSize);
                         } else {
-                            // คืนค่าเลือกเดิม
+                            // คืนค่ากลับ
                             const prevSize = documentTitle.textContent.match(/\((.*?)\)/)[1].replace(' ซม.', '');
                             for (let i = 0; i < sizeSelect.options.length; i++) {
                                 if (sizeSelect.options[i].text.includes(prevSize)) {
@@ -1376,6 +1400,7 @@
                     createTable(selectedSize);
                 }
             });
+
 
             // เพิ่ม event listeners สำหรับปุ่มลัด
             function initQuickButtons() {
@@ -1545,8 +1570,8 @@
                 document.getElementById("othersCheck").checked = false;
                 document.getElementById("othersText").value = "";
                 document.getElementById("normalCheck").checked = false;
-                document.getElementById("checker").value = "";
-                document.getElementById("inspector").value = "";
+                //document.getElementById("checker").value = "";
+                //document.getElementById("inspector").value = "";
 
                 // ล้างข้อมูลในตาราง
                 cells.forEach(cell => {
@@ -1730,6 +1755,8 @@
                 const checker = document.getElementById("checker").value;
                 const inspector = document.getElementById("inspector").value;
                 const remarks = document.getElementById("remarks").value;
+                const grade = document.getElementById("gradeSelect").value;
+
 
                 // ดึงค่าข้อมูลจากช่อง checkbox
                 const waterMarks = document.getElementById("waterMarksCheck").checked;
@@ -1777,7 +1804,8 @@
                     noLogo: noLogo ? 'Yes' : 'No',
                     sampleCount: sampleCount,
                     othersText: othersText,
-                    normal: normal ? 'Yes' : 'No'
+                    normal: normal ? 'Yes' : 'No',
+                    grade
                 };
 
                 console.log("กำลังบันทึกข้อมูล Block:", blockData);
