@@ -39,11 +39,6 @@
             background-color: #f5f5f5;
         }
         
-        .grid-table td.no-edit {
-            background-color: #e0e0e0 !important;
-            cursor: not-allowed;
-        }
-        
         .page-container {
             width: 100%;
             height: 100%;
@@ -1183,11 +1178,6 @@
                             td.style.height = cellSize + "px";
                         }
 
-                        // ✅ เพิ่ม: ห้ามแก้ไขถ้าเป็นแถวสีเทา
-                        if (highlightRows.includes(row)) {
-                            td.classList.add('no-edit');
-                        }
-
                         tr.appendChild(td);
                     }
 
@@ -1277,7 +1267,6 @@
                     cell.addEventListener('mousemove', function(e) {
                         if (isMouseDown) {
                             hasMovedMouse = true;
-                            if (this.classList.contains('no-edit')) return; // ❌ ข้าม cell ที่ห้ามแก้ไข
 
                             // โหมดมีสัญลักษณ์ที่เลือก
                             if (currentSymbol) {
@@ -1316,9 +1305,8 @@
 
                     const touch = e.touches[0];
                     const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                    if (element && element.tagName === 'TD') {
-                        if (element.classList.contains('no-edit')) return; // ❌ ข้าม cell ที่ห้ามแก้ไข
 
+                    if (element && element.tagName === 'TD') {
                         isDragging = true;
                         lastTouchedCell = element;
 
@@ -1349,7 +1337,6 @@
                     const element = document.elementFromPoint(touch.clientX, touch.clientY);
 
                     if (element && element.tagName === 'TD' && lastTouchedCell !== element) {
-                        if (element.classList.contains('no-edit')) return; // ❌ ข้าม cell ที่ห้ามแก้ไข
                         // ลบไฮไลท์จากเซลล์อื่น
                         cells.forEach(cell => cell.classList.remove('active-cell'));
 
@@ -1550,7 +1537,6 @@
 
             // ฟังก์ชันสำหรับคลิกที่เซลล์ (ใช้ซ้ำได้)
             function handleCellClick(cell) {
-                if (cell.classList.contains("no-edit")) return; // ✅ ข้ามเซลล์ที่ห้ามแก้ไข
                 if (currentSymbol) {
                     // สลับการมีและไม่มีข้อมูล
                     if (cell.textContent.trim() === '') {
