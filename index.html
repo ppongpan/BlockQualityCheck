@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>บันทึกคุณภาพอิฐมวลเบาประจำวัน</title>
+
+    <!-- เพิ่ม Google Font - Kanit -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- เพิ่ม Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- เพิ่ม Font Awesome สำหรับไอคอน -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- เพิ่ม SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- เพิ่ม Supabase JavaScript Library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        
+        .page-container {
+            width: 100%;
+            height: 100%;
+            max-width: 1366px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-height: 100vh;
+        }
+        /* สีหลัก - ปรับสีตามที่ต้องการ */
+        
+         :root {
+            --orange-primary: #E85D04;
+            --orange-light: #F9844A;
+            --orange-lightest: #FFEBCD;
+            --gray-dark: #4A4A4A;
+            --gray-light: #E9E9E9;
+            --cell-color: #FFF9E6;
+            --border-color: #D9D9D9;
+            --accent-border: #E85D04;
+            --blue-primary: #2E86C1;
+            --highlight-row: #D3D3D3;
+            --red-button: #dc3545;
+        }
+        /* ส่วนหัว */
+        
+        .header {
+            background-color: var(--orange-primary);
+            padding: 12px 16px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-logo {
+            height: 40px;
+            margin-right: 16px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .factory-group {
+            display: flex;
+            gap: 12px;
+        }
+        /* ส่วนข้อมูล */
+        
+        .info-section {
+            display: flex;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--gray-light);
+        }
+        
+        .info-field {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .info-field:last-child {
+            margin-right: 0;
+        }
+        
+        .info-field label {
+            display: block;
+            font-size: 14px;
+            color: var(--gray-dark);
+            margin-bottom: 4px;
+        }
+        
+        .info-field input,
+        .info-field select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        /* ปรับขนาดองค์ประกอบให้พอดีกับหน้าจอ */
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: calc(100% - 110px);
+            min-height: 0;
+            max-height: calc(100vh - 110px);
+        }
+        /* พาเนลซ้าย */
+        
+        .left-panel {
+            width: 330px;
+            border-right: 1px solid var(--border-color);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background-color: var(--gray-light);
+            max-height: 100%;
+            min-height: 0;
+        }
+        
+        .quick-buttons-label {
+            font-size: 13px;
+            color: var(--gray-dark);
+            margin-top: 5px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        /* Quick buttons */
+        
+        .quick-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .quick-symbol-btn {
+            background-color: var(--orange-light);
+            color: white;
+            border: none;
+            padding: 5px 2px;
+            border-radius: 4px;
+            font-size: 20px;
+            cursor: pointer;
+            flex: 1 0 31%;
+            text-align: center;
+            min-width: 95px;
+            transition: background-color 0.2s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .quick-symbol-btn.full-row {
+            flex: 1 0 100%;
+            background-color: var(--orange-light);
+            font-size: 16px;
+            padding: 8px;
+            font-weight: bold;
+        }
+        
+        .quick-symbol-btn:hover {
+            background-color: var(--orange-primary);
+        }
+        
+        .quick-symbol-btn.active {
+            background-color: var(--orange-primary);
+            font-weight: bold;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px var(--orange-primary);
+        }
+        /* ป้ายด้านซ้ายและขวาของตาราง */
+        
+        .grid-label {
+            position: absolute;
+            background-color: var(--orange-primary);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            width: 25px;
+            height: auto;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        .grid-label.left {
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%) rotate(180deg);
+        }
+        
+        .grid-label.right {
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        /* ปรับปรุงความกว้างของตารางให้เหมาะสมกับหน้าจอ */
+        
+        .grid-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 35px;
+            padding: 5px 0;
+        }
+        /* ปรับขนาดตารางให้เหมาะสม */
+        
+        .grid-table {
+            border-collapse: collapse;
+            table-layout: fixed;
+            width: auto;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .grid-table th,
+        .grid-table td {
+            border: 1px solid var(--border-color);
+            text-align: center;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            font-size: 12px;
+        }
+        
+        .grid-table th {
+            background-color: var(--gray-dark);
+            font-weight: bold;
+            color: white;
+        }
+        
+        .grid-table td {
+            background-color: var(--cell-color);
+            cursor: pointer;
+        }
+        
+        .grid-table td.filled-cell {
+            background-color: var(--orange-lightest);
+            font-weight: bold;
+            color: var(--gray-dark);
+        }
+        /* แถวที่เน้น */
+        
+        .grid-table tr.highlight-row td {
+            background-color: var(--highlight-row);
+        }
+        /* เส้นตาราง */
+        
+        .grid-table td.border-right {
+            border-right: 2px solid var(--accent-border);
+        }
+        
+        .grid-table td.border-bottom {
+            border-bottom: 2px solid var(--accent-border);
+        }
+        
+        .grid-table th.border-right {
+            border-right: 2px solid var(--accent-border);
+        }
+        /* พาเนลขวาสุด - ข้อมูลเพิ่มเติม */
+        
+        .right-panel {
+            width: 220px;
+            border-left: 1px solid var(--border-color);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--gray-light);
+            overflow-y: auto;
+            max-height: 100%;
+            min-height: 0;
+        }
+        
+        .info-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+        
+        .info-item {
+            background-color: var(--orange-primary);
+            border-radius: 4px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .info-item label {
+            display: block;
+            font-size: 14px;
+            color: white;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        
+        .info-item input,
+        .info-item textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid white;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        /* พาเนลกลาง - ตาราง */
+        
+        .center-panel {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+            overflow: auto;
+            position: relative;
+            background-color: var(--gray-light);
+            min-width: 0;
+            min-height: 0;
+        }
+        /* สไตล์เฉพาะตาราง 60x60x9 */
+        
+        .grid-table.size-60x60x9 td,
+        .grid-table.size-60x60x9 th {
+            border: 1px solid var(--border-color);
+            width: 60px !important;
+            height: 30px !important;
+            font-size: 16px !important;
+        }
+        /* ปรับแต่งปุ่มให้เหมือนตามรูป */
+        
+        .action-btn {
+            width: 100%;
+            padding: 8px 0;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+        
+        .action-btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-delete {
+            background-color: var(--red-button);
+        }
+        
+        .btn-delete:hover {
+            background-color: #bd2130;
+        }
+        
+        .btn-search {
+            background-color: var(--blue-primary);
+        }
+        
+        .btn-search:hover {
+            background-color: #1a6aa8;
+        }
+        
+        .btn-save {
+            background-color: var(--orange-primary);
+        }
+        
+        .btn-save:hover {
+            background-color: #d55201;
+        }
+        /* จัดการ checkbox container */
+        
+        .checkbox-container {
+            background-color: var(--orange-primary);
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .checkbox-item {
+            margin-bottom: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            color: white;
+            font-size: 13px;
+        }
+        
+        .checkbox-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .checkbox-item input[type="text"],
+        .checkbox-item input[type="number"] {
+            margin-left: 8px;
+            padding: 4px;
+            border: 1px solid white;
+            border-radius: 4px;
+            width: 80px;
+        }
+        
+        .checkbox-item span {
+            margin-left: 6px;
+        }
+        /* ตัวแสดงสถานะการโหลด */
+        
+        .loading-indicator {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            color: var(--orange-primary);
+            font-weight: bold;
+        }
+        /* ตัวแสดงสถานะการค้นหา */
+        
+        .search-status {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .search-status.success {
+            background-color: #D5F5E3;
+            color: #196F3D;
+        }
+        
+        .search-status.error {
+            background-color: #FADBD8;
+            color: #943126;
+        }
+        /* Cell Highlight */
+        
+        .grid-table td.active-cell {
+            box-shadow: inset 0 0 0 2px var(--orange-primary);
+        }
+        /* ข้อความบังคับแนวนอน */
+        
+        .landscape-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .landscape-warning h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .landscape-warning p {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        /* Modal Dialog */
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        .modal-content h3 {
+            margin-bottom: 15px;
+            color: var(--orange-primary);
+        }
+        
+        .modal-button {
+            background-color: var(--orange-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+        /* Responsive Design */
+        
+        @media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+            .main-content {
+                height: calc(100vh - 110px);
+            }
+            .grid-table th,
+            .grid-table td {
+                width: 22px;
+                height: 22px;
+                font-size: 11px;
+            }
+            .left-panel {
+                width: 300px;
+            }
+            .right-panel {
+                width: 200px;
+            }
+            .quick-symbol-btn {
+                min-width: 85px;
+                font-size: 13px;
+                padding: 4px 2px;
+            }
+        }
+        
+        @media (max-width: 1023px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .left-panel,
+            .right-panel {
+                width: 100%;
+                border-right: none;
+                border-left: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .center-panel {
+                min-height: 500px;
+            }
+            .grid-table th,
+            .grid-table td {
+                width: 18px;
+                height: 18px;
+                font-size: 10px;
+            }
+        }
+        
+        @media (orientation: portrait) and (max-width: 1024px) {
+            .landscape-warning {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="deviceWarning" class="modal">
+        <div class="modal-content">
+            <h3>ข้อความแจ้งเตือน</h3>
+            <p>โปรแกรมนี้สำหรับใช้งานบน PC หรือ Tablet เท่านั้น</p>
+            <button class="modal-button" onclick="document.getElementById('deviceWarning').style.display='none'">ตกลง</button>
+        </div>
+    </div>
+
+    <!-- แจ้งเตือนให้ใช้งานในแนวนอน -->
+    <div id="landscapeWarning" class="landscape-warning">
+        <h2>กรุณาหมุนอุปกรณ์</h2>
+        <p>โปรแกรมนี้ควรใช้งานในแนวนอนเท่านั้น<br>กรุณาหมุนอุปกรณ์ของคุณ</p>
+        <div>
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNzAgMjBIMzBjLTUuNSAwLTEwIDQuNS0xMCAxMHY0MGMwIDUuNSA0LjUgMTAgMTAgMTBoNDBjNS41IDAgMTAtNC41IDEwLTEwVjMwYzAtNS41LTQuNS0xMC0xMC0xMHpNNDAgNzVjLTIuNzYxIDAtNS0yLjIzOS01LTVzMi4yMzktNSA1LTUgNSAyLjIzOSA1IDUtMi4yMzkgNS01IDV6TTY1IDU1SDM1Yy0xLjEgMC0yLS45LTItMlYzMGMwLTEuMSAuOS0yIDItMmgzMGMxLjEgMCAyIC45IDIgMnYyM2MwIDEuMS0uOSAyLTIgMnoiIGZpbGw9IiNmZmYiLz48L3N2Zz4="
+                alt="หมุนอุปกรณ์" width="100">
+        </div>
+    </div>
+
+    <div class="page-container">
+        <!-- ส่วนหัว -->
+        <div class="header">
+            <div class="header-left">
+                <img src="https://7space.sgp1.digitaloceanspaces.com/8C91/1573000103.0a26ac5ada96c00c61d20a5a63f42257.jpg" alt="Logo" class="header-logo">
+                <div class="header-title">บันทึกคุณภาพอิฐมวลเบาประจำวัน (ขนาด 20x60x7.5 ซม.)</div>
+            </div>
+            <div class="factory-group">
+                <label><input type="radio" name="house" value="1" checked> โรงงาน 1</label>
+                <label><input type="radio" name="house" value="2"> โรงงาน 2</label>
+                <label><input type="radio" name="house" value="3"> โรงงาน 3</label>
+            </div>
+        </div>
+
+        <!-- ส่วนข้อมูล -->
+        <div class="info-section">
+            <div class="info-field">
+                <label>หมายเลขการผลิต</label>
+                <input type="text" id="productionNumber">
+            </div>
+            <div class="info-field">
+                <label>วันที่ตรวจเช็ค</label>
+                <input type="date" id="checkDate">
+            </div>
+            <div class="info-field">
+                <label>เวลาตรวจเช็ค</label>
+                <input type="time" id="checkTime">
+            </div>
+            <div class="info-field">
+                <label>ขนาด</label>
+                <select id="sizeSelect">
+                    <option value="">-- เลือกขนาด --</option>
+                    <option value="20x60x7.5">20x60x7.5 ซม.</option>
+                    <option value="20x50x7.5">20x50x7.5 ซม.</option>
+                    <option value="60x60x9.0">60x60x9.0 ซม.</option>
+                    <option value="20x60x10">20x60x10 ซม.</option>
+                    <option value="20x60x12.5">20x60x12.5 ซม.</option>
+                    <option value="20x60x15">20x60x15 ซม.</option>
+                    <option value="20x60x17.5">20x60x17.5 ซม.</option>
+                    <option value="20x60x20">20x60x20 ซม.</option>
+                    <option value="20x60x25">20x60x25 ซม.</option>
+                </select>
+            </div>
+            <div class="info-field">
+                <label for="gradeSelect">ชั้นคุณภาพ</label>
+                <select id="gradeSelect">
+                    <option value="">-- เลือกชั้น --</option>
+                    <option value="G2">G2</option>
+                    <option value="G3">G3</option>
+                    <option value="G4">G4</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ส่วนเนื้อหาหลัก -->
+        <div class="main-content">
+            <!-- ส่วนซ้าย -->
+            <div class="left-panel">
+                <div class="quick-buttons-label">เลือกอาการที่ตรวจพบ:</div>
+                <div class="quick-buttons-container">
+                    <!-- All quick buttons generated from dropdown options -->
+                    <button type="button" class="quick-symbol-btn" data-value="ค" title="ค = โค้งหน้า/โค้งหลัง">ค</button>
+                    <button type="button" class="quick-symbol-btn" data-value="ว" title="ว = เว้าหน้า/เว้าหลัง">ว</button>
+                    <button type="button" class="quick-symbol-btn" data-value="คท" title="คท = โค้งหน้าทิ้ง/โค้งหลังทิ้ง">คท</button>
+                    <button type="button" class="quick-symbol-btn" data-value="วท" title="วท = เว้าหน้าทิ้ง/เว้าหลังทิ้ง">วท</button>
+                    <button type="button" class="quick-symbol-btn" data-value="อ" title="อ = อบไม่สุก">อ</button>
+                    <button type="button" class="quick-symbol-btn" data-value="ข" title="ข = เขียทิ้ง">ข</button>
+                    <button type="button" class="quick-symbol-btn" data-value="ร" title="ร = ร้าว">ร</button>
+                    <button type="button" class="quick-symbol-btn" data-value="N" title="N = บิ่นบน B">N</button>
+                    <button type="button" class="quick-symbol-btn" data-value="H" title="H = บิ่นบนทิ้ง">H</button>
+                    <button type="button" class="quick-symbol-btn" data-value="B" title="B = บิ่นล่าง B">B</button>
+                    <button type="button" class="quick-symbol-btn" data-value="D" title="D = บิ่นล่างทิ้ง">D</button>
+                    <button type="button" class="quick-symbol-btn" data-value="M" title="M = พื้นร่อน B">M</button>
+                    <button type="button" class="quick-symbol-btn" data-value="E" title="E = พื้นร่อนทิ้ง">E</button>
+                    <button type="button" class="quick-symbol-btn" data-value="R" title="R = ร่อน B">R</button>
+                    <button type="button" class="quick-symbol-btn" data-value="P" title="P = ร่อนทิ้ง">P</button>
+                    <button type="button" class="quick-symbol-btn" data-value="T" title="T = ทรุด B">T</button>
+                    <button type="button" class="quick-symbol-btn" data-value="U" title="U = ทรุดทิ้ง">U</button>
+                    <button type="button" class="quick-symbol-btn" data-value="W" title="W = ผิดรูป B">W</button>
+                    <button type="button" class="quick-symbol-btn" data-value="Q" title="Q = ผิดรูปทิ้ง">Q</button>
+                    <button type="button" class="quick-symbol-btn" data-value="I" title="I = ไม่ได้ขนาดหนา B">I</button>
+                    <button type="button" class="quick-symbol-btn" data-value="V" title="V = ไม่ได้ขนาดหนาทิ้ง">V</button>
+                    <button type="button" class="quick-symbol-btn" data-value="L" title="L = ลวด LONG ขาด">L</button>
+                    <button type="button" class="quick-symbol-btn" data-value="C" title="C = ลวด CROSS ขาด">C</button>
+                    <button type="button" class="quick-symbol-btn" data-value="Y" title="Y = รอยลวด">Y</button>
+                    <button type="button" class="quick-symbol-btn" data-value="Z" title="Z = ระเบิดข้าง">Z</button>
+                    <button type="button" class="quick-symbol-btn" data-value="O" title="O = รูลวด">O</button>
+                    <button type="button" class="quick-symbol-btn" data-value="G" title="G = ขี้กลาก B">G</button>
+                    <button type="button" class="quick-symbol-btn" data-value="K" title="K = ขี้กลากทิ้ง">K</button>
+                    <button type="button" class="quick-symbol-btn" data-value="J" title="J = บวมข้าง B">J</button>
+                    <button type="button" class="quick-symbol-btn" data-value="F" title="F = บวมข้างทิ้ง">F</button>
+                    <button type="button" class="quick-symbol-btn" data-value="ต" title="ต = แตก/หัก">ต</button>
+                    <button type="button" class="quick-symbol-btn" data-value="นร" title="นร = หน้าไม่เรียบ">นร</button>
+                    <button type="button" class="quick-symbol-btn" data-value="นย" title="นย = หน้าย่น">นย</button>
+                    <button type="button" class="quick-symbol-btn" data-value="รข" title="รข = ร้าวข้าง">รข</button>
+                    <button type="button" class="quick-symbol-btn" data-value="รพ" title="รพ = รูพรุน">รพ</button>
+                    <button type="button" class="quick-symbol-btn" data-value="S" title="S = ไม่ได้ขนาดกว้าง B">S</button>
+                    <button type="button" class="quick-symbol-btn" data-value="X" title="X = ไม่ได้ขนาดกว้างทิ้ง">X</button>
+                    <button type="button" class="quick-symbol-btn" data-value="พ" title="พ = พื้นยุ่ย">พ</button>
+                    <button type="button" class="quick-symbol-btn" data-value="A" title="A = ไม่ได้ขนาดยาว">A</button>
+                    <button type="button" class="quick-symbol-btn full-row" data-value="EX" title="EX = สุ่มชักตัวอย่าง">EX</button>
+                </div>
+
+                <!-- ช่องเลือกอื่นๆ - ย้ายกลับมาด้านซ้าย -->
+                <div class="checkbox-container">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="waterMarksCheck">
+                        <label for="waterMarksCheck">รอยคราบน้ำ</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="noLogoCheck">
+                        <label for="noLogoCheck">ไม่มีโลโก้</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="samplesCheck">
+                        <label for="samplesCheck">ตัวอย่าง</label>
+                        <input type="number" id="sampleCount" placeholder="จำนวน">
+                        <span>ก้อน</span>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="othersCheck">
+                        <label for="othersCheck">อื่น ๆ</label>
+                        <input type="text" id="othersText" placeholder="ระบุ">
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="normalCheck">
+                        <label for="normalCheck">ปกติ</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ส่วนกลาง - ตาราง -->
+            <div class="center-panel">
+                <!-- ป้ายซ้าย/ขวาของตาราง -->
+                <div class="grid-label left">หัวโมลด์ (0m-Line)</div>
+                <div class="grid-label right">ท้ายโมลด์ (6m-Line)</div>
+
+                <div class="grid-container">
+                    <table class="grid-table" id="gridTable">
+                        <!-- ตารางจะถูกสร้างด้วย JavaScript -->
+                    </table>
+                </div>
+            </div>
+
+            <!-- ส่วนขวา - ข้อมูลเพิ่มเติม -->
+            <div class="right-panel">
+                <div class="info-container">
+                    <div class="info-item">
+                        <label>หมายเหตุ</label>
+                        <textarea rows="4" id="remarks" placeholder="กรอกหมายเหตุหรือรายละเอียดเพิ่มเติม"></textarea>
+                    </div>
+                    <div class="info-item">
+                        <label>ผู้ตรวจเช็ค</label>
+                        <input type="text" id="checker">
+                    </div>
+                    <div class="info-item">
+                        <label>ตรวจสอบโดย</label>
+                        <input type="text" id="inspector">
+                    </div>
+
+                    <!-- ปุ่มล้างตาราง -->
+                    <button id="clearTableButton" class="action-btn btn-delete">
+                        <i class="fas fa-trash"></i> ล้างตาราง
+                    </button>
+                </div>
+
+                <!-- ปุ่มค้นหาและบันทึก -->
+                <div class="button-container">
+                    <button id="searchDataButton" class="action-btn btn-search" title="ค้นหาข้อมูลจากหมายเลขการผลิต">
+                        <i class="fas fa-search"></i> ค้นหา
+                    </button>
+                </div>
+                <div class="button-container">
+                    <button id="saveDataButton" class="action-btn btn-save" title="บันทึกข้อมูล">
+                        <i class="fas fa-save"></i> บันทึก
+                    </button>
+                </div>
+
+                <!-- ตัวแสดงสถานะการโหลด -->
+                <div id="loadingIndicator" class="loading-indicator">กำลังดำเนินการ...</div>
+
+                <!-- ตัวแสดงสถานะการค้นหา -->
+                <div id="searchStatus" class="search-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle and Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // กำหนดค่า Supabase
+            const SUPABASE_URL = 'https://vhkfyxqgdggwbucmlica.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZoa2Z5eHFnZGdnd2J1Y21saWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNTgwNTQsImV4cCI6MjA2ODgzNDA1NH0.km74jpquUmFP_LrPx4WGkD65l5k28Eh0Ta9AIkPZy0c';
+
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // ความสัมพันธ์ระหว่างขนาดอิฐและขนาดตาราง
+            const brickTableConfig = {
+                "20x60x7.5": {
+                    rows: 20,
+                    cols: 30,
+                    highlightRows: [10]
+                },
+                "20x50x7.5": {
+                    rows: 20,
+                    cols: 30,
+                    highlightRows: [10]
+                },
+                "60x60x9.0": {
+                    rows: 16,
+                    cols: 10,
+                    highlightRows: [8]
+                },
+                "20x60x10": {
+                    rows: 15,
+                    cols: 30,
+                    highlightRows: [8]
+                },
+                "20x60x12.5": {
+                    rows: 12,
+                    cols: 30,
+                    highlightRows: [6]
+                },
+                "20x60x15": {
+                    rows: 10,
+                    cols: 30,
+                    highlightRows: [5]
+                },
+                "20x60x17.5": {
+                    rows: 9,
+                    cols: 30,
+                    highlightRows: [4, 9]
+                },
+                "20x60x20": {
+                    rows: 8,
+                    cols: 30,
+                    highlightRows: [4, 8]
+                },
+                "20x60x25": {
+                    rows: 6,
+                    cols: 30,
+                    highlightRows: [3]
+                }
+            };
+
+            // ตรวจสอบขนาดหน้าจอและแนวการแสดงผล
+            function checkDeviceTypeAndOrientation() {
+                const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const isSmallScreen = window.innerWidth < 768;
+                const isTablet = /iPad|Tablet/i.test(navigator.userAgent) || (window.innerWidth >= 768 && window.innerWidth <= 1024);
+                const isPortrait = window.innerHeight > window.innerWidth;
+
+                if (isMobile && isSmallScreen) {
+                    document.getElementById('deviceWarning').style.display = 'block';
+                }
+
+                if ((isTablet || window.innerWidth <= 1024) && isPortrait) {
+                    document.getElementById('landscapeWarning').style.display = 'flex';
+                } else {
+                    document.getElementById('landscapeWarning').style.display = 'none';
+                }
+            }
+
+            // เรียกใช้ฟังก์ชันตรวจสอบขนาดหน้าจอและแนวการแสดงผล
+            checkDeviceTypeAndOrientation();
+
+            // ตรวจสอบการเปลี่ยนแปลงขนาดหน้าจอ
+            window.addEventListener('resize', function() {
+                checkDeviceTypeAndOrientation();
+                const currentSize = sizeSelect.value;
+                if (currentSize) {
+                    createTable(currentSize);
+                }
+            });
+
+            window.addEventListener('orientationchange', function() {
+                setTimeout(checkDeviceTypeAndOrientation, 100);
+            });
+
+            // ตั้งค่าวันและเวลาปัจจุบัน
+            function setCurrentDateTime() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const dateString = `${year}-${month}-${day}`;
+
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const timeString = `${hours}:${minutes}`;
+
+                document.getElementById('checkDate').value = dateString;
+                document.getElementById('checkTime').value = timeString;
+            }
+
+            setCurrentDateTime();
+
+            // ตัวแปรและอีลิเมนต์ที่เกี่ยวข้อง
+            const sizeSelect = document.getElementById('sizeSelect');
+            const documentTitle = document.querySelector('.header-title');
+            const clearTableButton = document.getElementById('clearTableButton');
+            const searchButton = document.getElementById('searchDataButton');
+            const saveButton = document.getElementById('saveDataButton');
+            const productionNumberInput = document.getElementById('productionNumber');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const searchStatus = document.getElementById('searchStatus');
+            const gridTable = document.getElementById('gridTable');
+
+            // ตั้งค่าเริ่มต้น
+            let currentSymbol = '';
+            let cells = [];
+            let isDragging = false;
+            let lastTouchedCell = null;
+            let isMouseDown = false;
+            let isEraseMode = false;
+            let hasMovedMouse = false;
+
+            // ทดสอบการเชื่อมต่อ Supabase
+            async function testConnection() {
+                try {
+                    const {
+                        data,
+                        error
+                    } = await supabase.from('quality_records').select('count').limit(1);
+                    if (error) {
+                        console.warn('Supabase connection test:', error);
+                        showAlert('การเชื่อมต่อฐานข้อมูลมีปัญหา กรุณาตรวจสอบ');
+                        return false;
+                    }
+                    console.log('✅ Supabase connected successfully!');
+                    showStatus('เชื่อมต่อฐานข้อมูลสำเร็จ', true);
+                    return true;
+                } catch (error) {
+                    console.error('❌ Supabase connection failed:', error);
+                    showAlert('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + error.message);
+                    return false;
+                }
+            }
+
+            setTimeout(testConnection, 1000);
+
+            // แทนที่ alert() ด้วย SweetAlert
+            function showAlert(message, type = 'warning') {
+                Swal.fire({
+                    title: 'แจ้งเตือน',
+                    text: message,
+                    icon: type,
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: type === 'success' ? '#28a745' : '#E85D04'
+                });
+            }
+
+            // ฟังก์ชันแสดงข้อความยืนยัน
+            function showConfirm(message, callback) {
+                Swal.fire({
+                    title: 'ยืนยัน',
+                    text: message,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'ตกลง',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#dc3545'
+                }).then((result) => {
+                    callback(result.isConfirmed);
+                });
+            }
+
+            // ฟังก์ชันแสดงสถานะการโหลด
+            function showLoading(isLoading, message = 'กำลังดำเนินการ...') {
+                if (isLoading) {
+                    loadingIndicator.textContent = message;
+                    loadingIndicator.style.display = 'block';
+                    searchButton.disabled = true;
+                    saveButton.disabled = true;
+
+                    Swal.fire({
+                        title: message,
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                } else {
+                    loadingIndicator.style.display = 'none';
+                    searchButton.disabled = false;
+                    saveButton.disabled = false;
+                    Swal.close();
+                }
+            }
+
+            // ฟังก์ชันแสดงสถานะการค้นหา/บันทึก
+            function showStatus(message, isSuccess = true) {
+                searchStatus.textContent = message;
+                searchStatus.className = 'search-status ' + (isSuccess ? 'success' : 'error');
+                searchStatus.style.display = 'block';
+
+                Swal.fire({
+                    title: isSuccess ? 'สำเร็จ' : 'เกิดข้อผิดพลาด',
+                    text: message,
+                    icon: isSuccess ? 'success' : 'error',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: isSuccess ? '#28a745' : '#E85D04'
+                });
+
+                setTimeout(() => {
+                    searchStatus.style.display = 'none';
+                }, 5000);
+            }
+
+            // ฟังก์ชันแสดงข้อผิดพลาดแบบละเอียด
+            function showDetailedError(action, error, errorDetails = null) {
+                console.error(`${action} Error:`, error);
+
+                let errorMessage = `เกิดข้อผิดพลาดในการ${action}: ${error.message || error}`;
+
+                if (errorDetails) {
+                    errorMessage += `\n\nรายละเอียด: ${errorDetails}`;
+                }
+
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด',
+                    html: errorMessage.replace(/\n/g, '<br>'),
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#E85D04'
+                });
+            }
+
+            // ล้างข้อมูลในตาราง
+            function clearAllFormData() {
+                document.getElementById("productionNumber").value = "";
+                document.getElementById("remarks").value = "";
+                document.getElementById("waterMarksCheck").checked = false;
+                document.getElementById("noLogoCheck").checked = false;
+                document.getElementById("samplesCheck").checked = false;
+                document.getElementById("sampleCount").value = "";
+                document.getElementById("othersCheck").checked = false;
+                document.getElementById("othersText").value = "";
+                document.getElementById("normalCheck").checked = false;
+
+                cells.forEach(cell => {
+                    cell.textContent = "";
+                    cell.classList.remove("filled-cell");
+                });
+
+                currentSymbol = "";
+
+                document.querySelectorAll('.quick-symbol-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                setCurrentDateTime();
+            }
+            // สร้างตารางตามขนาดอิฐที่เลือก
+            function createTable(size) {
+                const config = brickTableConfig[size];
+                if (!config) return;
+
+                const rows = config.rows;
+                const cols = config.cols;
+                const highlightRows = config.highlightRows;
+                const is60x60x9 = size === "60x60x9.0";
+
+                const containerWidth = document.querySelector('.center-panel').clientWidth - 70;
+                const cellSize = Math.min(22, Math.floor((containerWidth / (cols + 2)) - 1));
+
+                gridTable.innerHTML = '';
+
+                let headerRow = document.createElement('tr');
+                let cornerCell = document.createElement('th');
+                cornerCell.textContent = 'ลำดับ';
+                headerRow.appendChild(cornerCell);
+
+                for (let i = 1; i <= cols; i++) {
+                    let th = document.createElement('th');
+                    th.textContent = i;
+
+                    if (!is60x60x9 && i % 5 === 0) {
+                        th.classList.add('border-right');
+                    }
+
+                    if (is60x60x9) {
+                        th.style.width = cellSize * 2 + "px";
+                    } else {
+                        th.style.width = cellSize + "px";
+                    }
+
+                    headerRow.appendChild(th);
+                }
+
+                let rightHeaderCell = document.createElement('th');
+                rightHeaderCell.textContent = 'ลำดับ';
+                headerRow.appendChild(rightHeaderCell);
+                gridTable.appendChild(headerRow);
+
+                for (let row = 1; row <= rows; row++) {
+                    let tr = document.createElement('tr');
+
+                    if (highlightRows.includes(row)) {
+                        tr.classList.add('highlight-row');
+                    }
+
+                    let leftRowHeader = document.createElement('th');
+                    leftRowHeader.textContent = row;
+                    tr.appendChild(leftRowHeader);
+
+                    for (let col = 1; col <= cols; col++) {
+                        let td = document.createElement('td');
+                        td.setAttribute('data-row', row);
+                        td.setAttribute('data-col', col);
+
+                        if (!is60x60x9) {
+                            let cellClasses = "";
+                            if (col % 5 === 0) cellClasses += "border-right ";
+                            if (cellClasses) {
+                                td.className = cellClasses;
+                            }
+                        }
+
+                        if (is60x60x9) {
+                            td.style.width = cellSize * 2 + "px";
+                            td.style.height = cellSize * 1.5 + "px";
+                            td.style.fontSize = "16px";
+                        } else {
+                            td.style.width = cellSize + "px";
+                            td.style.height = cellSize + "px";
+                        }
+
+                        tr.appendChild(td);
+                    }
+
+                    let rightRowHeader = document.createElement('th');
+                    rightRowHeader.textContent = row;
+                    tr.appendChild(rightRowHeader);
+                    gridTable.appendChild(tr);
+                }
+
+                let footerRow = document.createElement('tr');
+                let footerCornerCell = document.createElement('th');
+                footerRow.appendChild(footerCornerCell);
+
+                for (let i = 1; i <= cols; i++) {
+                    let th = document.createElement('th');
+                    th.textContent = i;
+
+                    if (!is60x60x9 && i % 5 === 0) {
+                        th.classList.add('border-right');
+                    }
+
+                    footerRow.appendChild(th);
+                }
+
+                let bottomRightCorner = document.createElement('th');
+                footerRow.appendChild(bottomRightCorner);
+                gridTable.appendChild(footerRow);
+
+                const selectedSizeText = sizeSelect.options[sizeSelect.selectedIndex].text;
+                documentTitle.textContent = `บันทึกคุณภาพอิฐมวลเบาประจำวัน (${selectedSizeText})`;
+
+                if (is60x60x9) {
+                    gridTable.classList.add('size-60x60x9');
+                } else {
+                    gridTable.classList.remove('size-60x60x9');
+                }
+
+                cells = document.querySelectorAll('.grid-table td');
+                addCellEventListeners();
+            }
+
+            // เพิ่ม event listeners สำหรับเซลล์
+            function addCellEventListeners() {
+                cells.forEach(cell => {
+                    cell.addEventListener('mousedown', function(e) {
+                        if (e.button !== 0) return;
+                        hasMovedMouse = false;
+                        isMouseDown = true;
+                        isEraseMode = this.textContent.trim() !== '';
+                        cells.forEach(c => c.classList.remove('active-cell'));
+                        this.classList.add('active-cell');
+                    });
+
+                    cell.addEventListener('mouseup', function(e) {
+                        if (e.button !== 0) return;
+                        if (isMouseDown && !hasMovedMouse) {
+                            handleCellClick(this);
+                        }
+                        isMouseDown = false;
+                        hasMovedMouse = false;
+                    });
+
+                    cell.addEventListener('mousemove', function(e) {
+                        if (isMouseDown) {
+                            hasMovedMouse = true;
+                            if (currentSymbol) {
+                                this.classList.add('active-cell');
+                                if (isEraseMode) {
+                                    if (this.textContent.trim() !== '') {
+                                        this.textContent = '';
+                                        this.classList.remove('filled-cell');
+                                    }
+                                } else {
+                                    if (this.textContent.trim() === '') {
+                                        this.textContent = currentSymbol;
+                                        this.classList.add('filled-cell');
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+
+                // Touch events for mobile
+                gridTable.addEventListener('touchstart', function(e) {
+                    if (!currentSymbol) return;
+                    const touch = e.touches[0];
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (element && element.tagName === 'TD') {
+                        isDragging = true;
+                        lastTouchedCell = element;
+                        isEraseMode = element.textContent.trim() !== '';
+                        if (element.textContent.trim() === '') {
+                            element.textContent = currentSymbol;
+                            element.classList.add('filled-cell');
+                        } else {
+                            element.textContent = '';
+                            element.classList.remove('filled-cell');
+                        }
+                        element.classList.add('active-cell');
+                        e.preventDefault();
+                    }
+                }, {
+                    passive: false
+                });
+
+                gridTable.addEventListener('touchmove', function(e) {
+                    if (!isDragging) return;
+                    const touch = e.touches[0];
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (element && element.tagName === 'TD' && lastTouchedCell !== element) {
+                        cells.forEach(cell => cell.classList.remove('active-cell'));
+                        element.classList.add('active-cell');
+                        lastTouchedCell = element;
+                        if (isEraseMode) {
+                            if (element.textContent.trim() !== '') {
+                                element.textContent = '';
+                                element.classList.remove('filled-cell');
+                            }
+                        } else {
+                            if (element.textContent.trim() === '') {
+                                element.textContent = currentSymbol;
+                                element.classList.add('filled-cell');
+                            }
+                        }
+                    }
+                }, {
+                    passive: false
+                });
+            }
+
+            // ฟังก์ชันสำหรับคลิกที่เซลล์
+            function handleCellClick(cell) {
+                if (currentSymbol) {
+                    if (cell.textContent.trim() === '') {
+                        cell.textContent = currentSymbol;
+                        cell.classList.add('filled-cell');
+                    } else {
+                        cell.textContent = '';
+                        cell.classList.remove('filled-cell');
+                    }
+                } else {
+                    showAlert('โปรดเลือกอาการที่พบก่อน');
+                }
+            }
+
+            // เพิ่ม event listeners สำหรับปุ่มลัด
+            function initQuickButtons() {
+                const quickButtons = document.querySelectorAll('.quick-symbol-btn');
+                quickButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const value = this.getAttribute('data-value');
+                        if (currentSymbol === value && this.classList.contains('active')) {
+                            currentSymbol = '';
+                            this.classList.remove('active');
+                        } else {
+                            currentSymbol = value;
+                            quickButtons.forEach(btn => btn.classList.remove('active'));
+                            this.classList.add('active');
+                        }
+                    });
+                });
+            }
+
+            initQuickButtons();
+
+            // Event listeners
+            sizeSelect.addEventListener('change', function() {
+                const selectedSize = sizeSelect.value;
+                if (!selectedSize) return;
+
+                let hasData = false;
+                cells.forEach(cell => {
+                    if (cell.textContent.trim() !== '') {
+                        hasData = true;
+                    }
+                });
+
+                if (hasData) {
+                    showConfirm('การเปลี่ยนขนาดจะทำให้ข้อมูลในตารางหายไป ต้องการดำเนินการต่อหรือไม่?', (confirmed) => {
+                        if (confirmed) {
+                            createTable(selectedSize);
+                        } else {
+                            const prevSize = documentTitle.textContent.match(/\((.*?)\)/)[1].replace(' ซม.', '');
+                            for (let i = 0; i < sizeSelect.options.length; i++) {
+                                if (sizeSelect.options[i].text.includes(prevSize)) {
+                                    sizeSelect.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    createTable(selectedSize);
+                }
+            });
+
+            clearTableButton.addEventListener('click', function() {
+                showConfirm('คุณต้องการล้างข้อมูลทั้งหมดในฟอร์มใช่หรือไม่?', (confirmed) => {
+                    if (confirmed) {
+                        clearAllFormData();
+                    }
+                });
+            });
+
+            // ฟังก์ชันสำหรับบันทึกข้อมูล
+            saveButton.addEventListener("click", async function() {
+                const productionNumber = document.getElementById("productionNumber").value.trim();
+                const checkDate = document.getElementById("checkDate").value;
+                const checkTime = document.getElementById("checkTime").value;
+                const size = document.getElementById("sizeSelect").value;
+                const grade = document.getElementById("gradeSelect").value;
+                const checker = document.getElementById("checker").value;
+                const inspector = document.getElementById("inspector").value;
+                const remarks = document.getElementById("remarks").value;
+
+                const waterMarks = document.getElementById("waterMarksCheck").checked;
+                const noLogo = document.getElementById("noLogoCheck").checked;
+                const samples = document.getElementById("samplesCheck").checked;
+                const sampleCount = samples ? parseInt(document.getElementById("sampleCount").value) || 0 : 0;
+                const others = document.getElementById("othersCheck").checked;
+                const othersText = others ? document.getElementById("othersText").value : '';
+                const normal = document.getElementById("normalCheck").checked;
+
+                const factoryNumber = document.querySelector('input[name="house"]:checked').value;
+
+                // Validation
+                if (!productionNumber) {
+                    showAlert("กรุณากรอกหมายเลขการผลิต");
+                    return;
+                }
+                if (!checkDate) {
+                    showAlert("กรุณาเลือกวันที่ตรวจเช็ค");
+                    return;
+                }
+                if (!checker) {
+                    showAlert("กรุณากรอกชื่อผู้ตรวจเช็ค");
+                    return;
+                }
+
+                // รวบรวมข้อมูลตำแหน่ง
+                const positions = [];
+                cells.forEach(cell => {
+                    const row = parseInt(cell.getAttribute("data-row"));
+                    const col = parseInt(cell.getAttribute("data-col"));
+                    const value = cell.textContent.trim();
+
+                    if (value !== "" && !isNaN(row) && !isNaN(col)) {
+                        positions.push({
+                            row_position: row,
+                            col_position: col,
+                            defect_type: value
+                        });
+                    }
+                });
+
+                try {
+                    showLoading(true, "กำลังบันทึกข้อมูลลงฐานข้อมูล...");
+
+                    // ลบข้อมูลเก่าก่อน (ถ้ามี)
+                    const {
+                        error: deleteError
+                    } = await supabase
+                        .from('quality_records')
+                        .delete()
+                        .eq('production_number', productionNumber);
+
+                    // บันทึกข้อมูลหลัก
+                    const {
+                        data: recordData,
+                        error: recordError
+                    } = await supabase
+                        .from('quality_records')
+                        .insert([{
+                            production_number: productionNumber,
+                            factory: `โรงงาน ${factoryNumber}`,
+                            check_date: checkDate,
+                            check_time: checkTime,
+                            brick_size: size,
+                            grade: grade,
+                            checker: checker,
+                            inspector: inspector,
+                            remarks: remarks,
+                            water_marks: waterMarks,
+                            no_logo: noLogo,
+                            sample_count: sampleCount,
+                            others_text: othersText,
+                            normal: normal
+                        }])
+                        .select()
+                        .single();
+
+                    if (recordError) throw recordError;
+
+                    console.log("บันทึกข้อมูลหลักสำเร็จ:", recordData);
+
+                    // บันทึกข้อมูลตำแหน่ง
+                    if (positions.length > 0) {
+                        const positionsWithRecordId = positions.map(pos => ({
+                            ...pos,
+                            quality_record_id: recordData.id
+                        }));
+
+                        const {
+                            error: positionsError
+                        } = await supabase
+                            .from('defect_positions')
+                            .insert(positionsWithRecordId);
+
+                        if (positionsError) throw positionsError;
+
+                        console.log("บันทึกข้อมูลตำแหน่งสำเร็จ:", positions.length, "ตำแหน่ง");
+                    }
+
+                    showLoading(false);
+                    showStatus(`บันทึกข้อมูลสำเร็จ! (ID: ${recordData.id})`, true);
+
+                    showConfirm("ต้องการล้างข้อมูลในฟอร์มเพื่อเริ่มการบันทึกใหม่หรือไม่?", (confirmed) => {
+                        if (confirmed) {
+                            clearAllFormData();
+                        }
+                    });
+
+                } catch (error) {
+                    showLoading(false);
+                    showDetailedError("บันทึกข้อมูล", error);
+                    console.error("Error saving data:", error);
+                }
+            });
+
+            // ฟังก์ชันสำหรับค้นหาข้อมูล
+            searchButton.addEventListener("click", async function() {
+                const productionNumber = productionNumberInput.value.trim();
+
+                if (!productionNumber) {
+                    showAlert("กรุณากรอกหมายเลขการผลิตที่ต้องการค้นหา");
+                    return;
+                }
+
+                try {
+                    showLoading(true, "กำลังค้นหาข้อมูลจากฐานข้อมูล...");
+
+                    // ค้นหาข้อมูลหลัก
+                    const {
+                        data: recordData,
+                        error: recordError
+                    } = await supabase
+                        .from('quality_records')
+                        .select('*')
+                        .eq('production_number', productionNumber)
+                        .single();
+
+                    if (recordError && recordError.code === 'PGRST116') {
+                        showLoading(false);
+                        showStatus("ไม่พบข้อมูลที่ค้นหา", false);
+                        return;
+                    }
+
+                    if (recordError) throw recordError;
+
+                    console.log("พบข้อมูลหลัก:", recordData);
+
+                    // ค้นหาข้อมูลตำแหน่ง
+                    const {
+                        data: positionsData,
+                        error: positionsError
+                    } = await supabase
+                        .from('defect_positions')
+                        .select('*')
+                        .eq('quality_record_id', recordData.id);
+
+                    if (positionsError) throw positionsError;
+
+                    console.log("พบข้อมูลตำแหน่ง:", positionsData.length, "ตำแหน่ง");
+
+                    // ล้างข้อมูลเดิม
+                    clearAllFormData();
+
+                    // กรอกข้อมูลลงในฟอร์ม
+                    document.getElementById("productionNumber").value = recordData.production_number || "";
+
+                    // โรงงาน
+                    if (recordData.factory) {
+                        const factoryNum = recordData.factory.replace("โรงงาน ", "");
+                        const radioBtn = document.querySelector(`input[name="house"][value="${factoryNum}"]`);
+                        if (radioBtn) radioBtn.checked = true;
+                    }
+
+                    // วันที่และเวลา
+                    if (recordData.check_date) {
+                        document.getElementById("checkDate").value = recordData.check_date;
+                    }
+                    if (recordData.check_time) {
+                        document.getElementById("checkTime").value = recordData.check_time;
+                    }
+
+                    // ขนาดและเกรด
+                    if (recordData.brick_size) {
+                        document.getElementById("sizeSelect").value = recordData.brick_size;
+                        createTable(recordData.brick_size);
+                    }
+                    if (recordData.grade) {
+                        document.getElementById("gradeSelect").value = recordData.grade;
+                    }
+
+                    // ผู้ตรวจ
+                    document.getElementById("checker").value = recordData.checker || "";
+                    document.getElementById("inspector").value = recordData.inspector || "";
+                    document.getElementById("remarks").value = recordData.remarks || "";
+
+                    // Checkboxes
+                    document.getElementById("waterMarksCheck").checked = recordData.water_marks || false;
+                    document.getElementById("noLogoCheck").checked = recordData.no_logo || false;
+                    document.getElementById("normalCheck").checked = recordData.normal || false;
+
+                    if (recordData.sample_count > 0) {
+                        document.getElementById("samplesCheck").checked = true;
+                        document.getElementById("sampleCount").value = recordData.sample_count;
+                    }
+
+                    if (recordData.others_text) {
+                        document.getElementById("othersCheck").checked = true;
+                        document.getElementById("othersText").value = recordData.others_text;
+                    }
+
+                    // รอให้ตารางถูกสร้าง
+                    setTimeout(() => {
+                        cells = document.querySelectorAll('.grid-table td');
+                        addCellEventListeners();
+
+                        // กรอกข้อมูลตำแหน่ง
+                        if (positionsData && positionsData.length > 0) {
+                            positionsData.forEach(position => {
+                                const cell = document.querySelector(`.grid-table td[data-row="${position.row_position}"][data-col="${position.col_position}"]`);
+                                if (cell) {
+                                    cell.textContent = position.defect_type;
+                                    cell.classList.add('filled-cell');
+                                } else {
+                                    console.warn(`ไม่พบเซลล์ที่ตำแหน่ง ${position.row_position},${position.col_position}`);
+                                }
+                            });
+                        }
+                    }, 200);
+
+                    showLoading(false);
+                    showStatus(`ค้นพบข้อมูล: ${productionNumber}`, true);
+
+                } catch (error) {
+                    showLoading(false);
+                    showDetailedError("ค้นหาข้อมูล", error);
+                    console.error("Search error:", error);
+                }
+            });
+
+            // Prevent context menu on grid table
+            gridTable.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Clean up touch and mouse events
+            document.addEventListener('touchend', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    cells.forEach(cell => cell.classList.remove('active-cell'));
+                }
+            });
+
+            document.addEventListener('touchcancel', function() {
+                isDragging = false;
+                cells.forEach(cell => cell.classList.remove('active-cell'));
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isMouseDown) {
+                    isMouseDown = false;
+                    setTimeout(() => {
+                        cells.forEach(cell => cell.classList.remove('active-cell'));
+                    }, 300);
+                }
+            });
+        });
+
+        // Enable Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    </script>
+</body>
+
+</html>
